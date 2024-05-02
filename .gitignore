@@ -1,0 +1,8 @@
+./api-gateway/.env
+./api-gateway/node_modules
+
+./equatorial/.env
+./equatorial/node_modules
+
+./user-auth/.env
+./user-auth/node_modules
