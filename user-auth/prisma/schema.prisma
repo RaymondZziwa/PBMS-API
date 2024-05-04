@@ -13,50 +13,58 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model  user {
-  user_id      Int @id @default(autoincrement())
-  first_name  String
-  last_name   String
-  gender      String
-  nin_number  String
-  email       String   @unique
-  password    String
-  branch      String
-  department  String
-  role        String
-  salary      String
-  dob         String
-  contact1    String
-  contact2    String?
-  bankinfo     bankinfo?
+model user {
+  user_id       Int            @id @default(autoincrement())
+  first_name    String
+  last_name     String
+  gender        String
+  nin_number    String
+  email         String         @unique
+  password      String
+  branch        String
+  department    String
+  role          String
+  salary        String
+  dob           DateTime
+  contact1      String
+  contact2      String?
+  bankinfo      bankinfo?
   educationinfo educationinfo?
   addressinfo   addressinfo?
+  createdAt     DateTime       @default(now())
+  userSessions  userSessions[]
+}
+
+model userSessions {
+  sessionId        String   @id @default(cuid())
+  user             user     @relation(fields: [user_id], references: [user_id])
+  user_id          Int
+  last_time_online DateTime
 }
 
 model bankinfo {
-  id         Int      @id @default(autoincrement())
-  user       user     @relation(fields: [user_id], references: [user_id])
-  user_id     Int      @unique
+  id         Int    @id @default(autoincrement())
+  user       user   @relation(fields: [user_id], references: [user_id])
+  user_id    Int    @unique
   bank_name  String
   account_no String
 }
 
 model educationinfo {
-  id          Int      @id @default(autoincrement())
-  user        user     @relation(fields: [user_id], references: [user_id])
-  user_id     Int      @unique
+  id            Int    @id @default(autoincrement())
+  user          user   @relation(fields: [user_id], references: [user_id])
+  user_id       Int    @unique
   qualification String
   institution   String
-
 }
 
 model addressinfo {
-  id         Int      @id @default(autoincrement())
-  user       user     @relation(fields: [user_id], references: [user_id])
-  user_id     Int      @unique
-  village    String
-  parish     String
-  subcounty  String
-  county     String
-  district   String
+  id        Int    @id @default(autoincrement())
+  user      user   @relation(fields: [user_id], references: [user_id])
+  user_id   Int    @unique
+  village   String
+  parish    String
+  subcounty String
+  county    String
+  district  String
 }
