@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { AuthMicroserviceService } from './app.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
@@ -11,10 +11,15 @@ import {
   resetPasswordDto,
   validateTokenDto,
 } from './dto/users.dto';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from '@nestjs/cache-manager';
 
 @Controller()
 export class AuthMicroserviceController {
-  constructor(private readonly authService: AuthMicroserviceService) {}
+  constructor(
+    private readonly authService: AuthMicroserviceService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   @MessagePattern({ cmd: 'VALIDATE_TOKEN' })
   vaalidateAccessToken(@Payload() data: validateTokenDto) {

@@ -5,6 +5,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { JwtTokenModule } from './jwt/jwt.module';
 import { JwtTokenService } from './jwt/jwt.service';
 import { ConfigModule } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -12,6 +13,7 @@ import { ConfigModule } from '@nestjs/config';
     }),
     PrismaModule,
     JwtTokenModule,
+    CacheModule.register(),
   ],
   controllers: [AuthMicroserviceController],
   providers: [AuthMicroserviceService, JwtTokenService],
