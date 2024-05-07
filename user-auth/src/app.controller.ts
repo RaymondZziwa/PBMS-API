@@ -1,4 +1,4 @@
-import { Controller, Inject } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { AuthMicroserviceService } from './app.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
@@ -6,23 +6,23 @@ import {
   deleteUserDto,
   getUserDto,
   loginDto,
+  loginWithAccessKeyDto,
   renewAccessTokenDto,
   requestUserAccessKeyDto,
   resetPasswordDto,
   validateTokenDto,
 } from './dto/users.dto';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from '@nestjs/cache-manager';
+import { RedisService } from './cache/config/redis.service';
 
 @Controller()
 export class AuthMicroserviceController {
   constructor(
     private readonly authService: AuthMicroserviceService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private redisService: RedisService,
   ) {}
 
   @MessagePattern({ cmd: 'VALIDATE_TOKEN' })
-  vaalidateAccessToken(@Payload() data: validateTokenDto) {
+  validateAccessToken(@Payload() data: validateTokenDto) {
     return this.authService.validatedAccessToken(data);
   }
 
@@ -32,8 +32,20 @@ export class AuthMicroserviceController {
   }
 
   @MessagePattern({ cmd: 'GET_USER' })
-  getUser(@Payload() data: getUserDto) {
-    return this.authService.getUser(data);
+  async getUser(@Payload() data: getUserDto) {
+    const cachedUser: any = await this.redisService.getData(
+      data.user_id.toString(),
+    );
+
+    if (cachedUser) {
+      return JSON.parse(cachedUser);
+    }
+    const fetchedUser = await this.authService.getUser(data);
+    this.redisService.setData(
+      data.user_id.toString(),
+      JSON.stringify(fetchedUser),
+    );
+    return fetchedUser;
   }
 
   @MessagePattern({ cmd: 'REQUEST_ACCESS_KEY' })
@@ -56,13 +68,24 @@ export class AuthMicroserviceController {
     return this.authService.login(data);
   }
 
+  @MessagePattern({ cmd: 'LOGIN_WITH_ACCESS_KEY' })
+  loginWithAccessKey(@Payload() data: loginWithAccessKeyDto) {
+    return this.authService.loginWithAccessKey(data);
+  }
+
   @MessagePattern({ cmd: 'RESET_PASSWORD' })
   resetPassword(@Payload() data: resetPasswordDto) {
     return this.authService.resetPassword(data);
   }
 
   @MessagePattern({ cmd: 'GET_ALL_USERS' })
-  getAllUsers() {
-    return this.authService.getAllUsers();
+  async getAllUsers() {
+    const cachedList: any = await this.redisService.getData('users_list');
+    if (cachedList) {
+      return JSON.parse(cachedList);
+    }
+    const fetchedList = await this.authService.getAllUsers();
+    this.redisService.setData('users_list', JSON.stringify(fetchedList));
+    return fetchedList;
   }
 }

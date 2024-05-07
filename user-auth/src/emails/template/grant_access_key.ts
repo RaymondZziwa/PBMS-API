@@ -5,7 +5,7 @@ export const requestUserAccessKeyEmail = (
   return `
     Dear ${name},
 
-    We received a request to reset your password for your account at ProfBioresearch Management System. To help you regain access to your account, we have generated a unique access key for you.
+    We received a request to reset your password for your account at Prof-bioresearch Management System. To help you regain access to your account, we have generated a unique access key for you.
 
     Access Key: ${accessKey}
 

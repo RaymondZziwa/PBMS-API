@@ -138,11 +138,23 @@ export class getUserDto {
 export class requestUserAccessKeyDto {
   @IsString()
   @IsNotEmpty()
+  @IsEmail()
   email: string;
 
   @IsString()
   @IsNotEmpty()
   accessKey: string;
+}
+
+export class loginWithAccessKeyDto {
+  @IsString()
+  @IsNotEmpty()
+  accessKey: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @IsEmail()
+  email: string;
 }
 
 export class deleteUserDto {

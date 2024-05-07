@@ -8,22 +8,39 @@ services:
         ./user-auth/.env
       environment:
         MYSQL_ROOT_PASSWORD: 123
-    gateway:
-      build: ./gateway
+    # gateway:
+    #   build: ./gateway
+    #   volumes:
+    #     - ./gateway/src:/usr/src/app/src
+    #   ports:
+    #     - 3000:3000
+    #   command: npm run start:dev
+    #   environment:
+    #     - PORT=3000
+    # users-auth:
+    #   build: ./user-auth
+    #   volumes:
+    #     - ./user-auth/src:/usr/src/app/src
+    #   command: npm run start:dev
+    #   depends_on:
+    #   - redis
+    #   - profdevdb
+    # nats:
+    #   image: nats
+    #   ports:
+    #     - "4222:4222"
+    redis:
+      image: redis
       volumes:
-        - ./gateway/src:/usr/src/app/src
+            - ./user-auth/src/cache/data:/data
       ports:
-        - 3000:3000
-      command: npm run start:dev
+        - 6379:6379
+    redis-commander:
+      container_name: redis-commander
+      hostname: redis-commander
+      image: ghcr.io/joeferner/redis-commander:latest
       environment:
-        - PORT=3000
-    users-auth:
-      build: ./user-auth
-      volumes:
-        - ./user-auth/src:/usr/src/app/src
-      command: npm run start:dev
-    nats:
-      image: nats
+        - REDIS_HOSTS=local:redis:6379
       ports:
-        - "4222:4222"
+        - "8081:8081"
     
