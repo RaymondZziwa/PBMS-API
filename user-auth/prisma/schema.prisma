@@ -68,3 +68,134 @@ model addressinfo {
   county    String
   district  String
 }
+
+model client {
+  client_id       Int               @id @default(autoincrement())
+  first_name      String
+  last_name       String
+  email           String?           @unique
+  phone           String            @unique
+  address         String?
+  registeredAt    DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  externalreceipt externalreceipt[]
+}
+
+model product {
+  product_id                    Int                       @id @default(autoincrement())
+  name                          String
+  price                         Float
+  barcode                       Int
+  createdAt                     DateTime                  @default(now())
+  updatedAt                     DateTime                  @updatedAt
+  eshopinventory                eshopinventory[]
+  eshoprestockrecord            eshoprestockrecord[]
+  eshopStocktakeoutrecord       eshopStocktakeoutrecord[]
+  externalreceipt               externalreceipt?          @relation(fields: [externalreceiptReceipt_number], references: [receipt_number])
+  externalreceiptReceipt_number String?
+}
+
+model eshopinventory {
+  inventory_id Int     @id @default(autoincrement())
+  product      product @relation(fields: [product_id], references: [product_id])
+  product_id   Int
+  quantity     Float
+  units        String
+}
+
+model eshoprestockrecord {
+  record_id     Int      @id @default(autoincrement())
+  product       product  @relation(fields: [product_id], references: [product_id])
+  product_id    Int
+  quantity      Float
+  units         String
+  source        String
+  notes         String?
+  received_date DateTime
+  received_by   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model eshopStocktakeoutrecord {
+  record_id      Int      @id @default(autoincrement())
+  product        product  @relation(fields: [product_id], references: [product_id])
+  product_id     Int
+  stocktake_date DateTime
+  quantity       Float
+  units          String
+  destination    String
+  authorized_by  String
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model externalreceipt {
+  receipt_number String    @id @unique
+  client         client?   @relation(fields: [client_id], references: [client_id])
+  client_id      Int
+  items          product[]
+  total_price    Float
+  balance        Float
+  payment_method String
+  payment_status String
+  notes          String?
+  transactionID  String
+  sale_date      DateTime
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model saffronsale {
+  sales_id    Int      @id @default(autoincrement())
+  user_id     Int
+  amount_sold Int
+  sale_date   DateTime
+  Points      Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model massageincome {
+  submission_id   Int      @id @default(autoincrement())
+  submission_date DateTime
+  massage_amount  Float
+  product_amount  Float
+  submitted_by    String
+  received_by     String
+  status          String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model eshopexpense {
+  expense_id     Int      @id @default(autoincrement())
+  date           DateTime
+  category       String
+  name           String
+  description    String
+  cost           Float
+  balance        Float
+  payment_method String
+  payment_status String
+  receipt_image  String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model cheque {
+  entry_id          Int      @id @default(autoincrement())
+  cheque_number     String
+  drawer_first_name String
+  drawer_last_name  String
+  bank              String
+  reason            String
+  amount            Float
+  date_issued       DateTime
+  banking_date      DateTime
+  notes             String?
+  status            String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}

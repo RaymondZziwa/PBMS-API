@@ -3,7 +3,7 @@ import { NextFunction } from 'express';
 
 @Injectable()
 export class BearerTokenExtractor implements NestMiddleware {
-  use(req: Request, res: Response, next: NextFunction) {
+  async use(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers['authorization'];
     const role = req.headers['role'];
     if (authHeader && authHeader.startsWith('Bearer ')) {

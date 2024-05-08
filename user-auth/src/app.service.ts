@@ -59,9 +59,19 @@ export class AuthMicroserviceService {
   //login with email and password
   async login(data: loginDto) {
     try {
-      const user = await this.prismaService
+      const user: [
+        {
+          user_id: number;
+          last_name: string;
+          email: string;
+          branch: string;
+          department: string;
+          role: string;
+          password: string;
+        },
+      ] = await this.prismaService
         .$queryRaw`SELECT user_id, last_name, branch, department, role, password FROM user WHERE email = ${data.email}`;
-      if (user) {
+      if (user.length > 0) {
         const validPass: boolean = await bcrypt.compare(
           data.password,
           user[0].password,
