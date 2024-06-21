@@ -76,44 +76,35 @@ model client {
   email           String?           @unique
   phone           String            @unique
   address         String?
+  registeredAt    DateTime          @default(now())
+  updatedAt       DateTime          @default(now()) @updatedAt
   externalreceipt externalreceipt[]
-  sales           sales[]
-  registeredAt    DateTime          @default(now())
-  updatedAt       DateTime          @default(now()) @updatedAt
-}
-
-model sales {
-  sale_id            Int    @id @default(autoincrement())
-  client      client   @relation(fields: [client_id], references: [client_id])
-  client_id   Int    @unique
-  items         String
-  registeredAt    DateTime          @default(now())
-  updatedAt       DateTime          @default(now()) @updatedAt
-}
-
-model supplier {
-  supplier_id       Int               @id @default(autoincrement())
-  first_name      String
-  last_name       String
-  email           String?           @unique
-  phone           String            @unique
-  address         String?
-  registeredAt    DateTime          @default(now())
-  updatedAt       DateTime          @default(now()) @updatedAt
-  supplyrecords   supplyrecords[]
-}
-
-model supplyrecords {
-  supply_id     Int    @id @default(autoincrement())
-  supplier      supplier   @relation(fields: [supplier_id], references: [supplier_id])
-  supplier_id   Int
-  items         String
-  registeredAt    DateTime          @default(now())
-  updatedAt       DateTime          @default(now()) @updatedAt
 }
 
 model product {
   product_id                    Int                       @id @default(autoincrement())
+  name                          String
+  price                         Float
+  barcode                       Int
+  createdAt                     DateTime                  @default(now())
+  updatedAt                     DateTime                  @default(now()) @updatedAt
+  eshopinventory                eshopinventory[]
+  eshoprestockrecord            eshoprestockrecord[]
+  eshopStocktakeoutrecord       eshopStocktakeoutrecord[]
+  externalreceipt               externalreceipt?          @relation(fields: [externalreceiptReceipt_number], references: [receipt_number])
+  externalreceiptReceipt_number String?
+}
+
+model eshopinventory {
+  inventory_id Int     @id @default(autoincrement())
+  product      product @relation(fields: [product_id], references: [product_id])
+  product_id   Int
+  quantity     Float
+  units        String
+}
+
+model project {
+  project_id                    Int                       @id @default(autoincrement())
   name                          String
   price                         Float
   barcode                       String
@@ -126,41 +117,70 @@ model product {
   externalreceiptReceipt_number String?
 }
 
-
-model eshopinventory {
+model eprojectsinventory {
   inventory_id Int     @id @default(autoincrement())
-  product      product @relation(fields: [product_id], references: [product_id])
-  product_id   Int
+  project      project @relation(fields: [project_id], references: [project_id])
+  project_id   Int
   quantity     Float
   units        String
 }
 
-model eshoprestockrecord {
-  record_id        Int      @id @default(autoincrement())
-  product          product  @relation(fields: [product_id], references: [product_id])
-  product_id       Int
-  quantity         Float
-  units            String
-  source           String
-  notes            String?
+model eshopprojectrestockrecord {
+  record_id     Int      @id @default(autoincrement())
+  project       project  @relation(fields: [project_id], references: [project_id])
+  project_id    Int
+  quantity      Float
+  units         String
+  source        String
+  notes         String?
+  transaction_date          DateTime
+  authorized_by   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+}
+
+model eshopprojecttakeoutrecord {
+  record_id      Int      @id @default(autoincrement())
+  project       project  @relation(fields: [project_id], references: [project_id])
+  project_id     Int
   transaction_date DateTime
-  authorized_by    String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @default(now()) @updatedAt
+  quantity       Float
+  units          String
+  destination    String
+  authorized_by  String
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+}
+
+
+
+model eshoprestockrecord {
+  record_id     Int      @id @default(autoincrement())
+  product       product  @relation(fields: [product_id], references: [product_id])
+  product_id    Int
+  quantity      Float
+  units         String
+  source        String
+  notes         String?
+  transaction_date          DateTime
+  authorized_by   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
 }
 
 model eshopStocktakeoutrecord {
-  record_id        Int      @id @default(autoincrement())
-  product          product  @relation(fields: [product_id], references: [product_id])
-  product_id       Int
+  record_id      Int      @id @default(autoincrement())
+  product        product  @relation(fields: [product_id], references: [product_id])
+  product_id     Int
   transaction_date DateTime
-  quantity         Float
-  units            String
-  destination      String
-  authorized_by    String
-  notes            String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @default(now()) @updatedAt
+  quantity       Float
+  units          String
+  destination    String
+  authorized_by  String
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
 }
 
 model externalreceipt {
@@ -176,29 +196,17 @@ model externalreceipt {
   transactionID  String
   sale_date      DateTime
   createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-}
-
-model saffronuser {
-  user_id        Int      @id @default(autoincrement())
-  username       String   @unique
-  email          String   @unique
-  password       String
-  totalpts       Int
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  saffronsale    saffronsale[]
+  updatedAt      DateTime  @default(now()) @updatedAt
 }
 
 model saffronsale {
   sales_id    Int      @id @default(autoincrement())
-  saffronuser          saffronuser  @relation(fields: [user_id], references: [user_id])
   user_id     Int
   amount_sold Int
   sale_date   DateTime
   Points      Float
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now()) @updatedAt
 }
 
 model massageincome {
@@ -207,10 +215,10 @@ model massageincome {
   massage_amount  Float
   product_amount  Float
   submitted_by    String
-  received_by     String?
+  received_by     String
   status          String
   createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  updatedAt       DateTime @default(now()) @updatedAt
 }
 
 model eshopexpense {
@@ -218,7 +226,7 @@ model eshopexpense {
   date           DateTime
   category       String
   name           String
-  description    String
+  description    String?
   cost           Float
   balance        Float
   payment_method String
@@ -241,5 +249,5 @@ model cheque {
   notes             String?
   status            String
   createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  updatedAt         DateTime @default(now()) @updatedAt
 }
