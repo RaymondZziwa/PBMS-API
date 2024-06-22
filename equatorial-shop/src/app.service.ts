@@ -12,6 +12,7 @@ import {
   saveProductInventoryRestockDto,
   saveProjectInventoryDepleteDto,
   saveProjectInventoryRestockDto,
+  saveSaleDto,
   saveSupplierDto,
   updateExpenseDto,
   viewExpenseDto,
@@ -1067,8 +1068,92 @@ export class AppService {
   }
 
   //pos
-  async saveSale() {}
-  async retrieveSale() {}
+  async saveSale(dto: saveSaleDto) {
+    try {
+      const insufficientItems = [];
+      const cartItems = JSON.parse(dto.items);
+  
+      const promises = cartItems.map(
+        async (item: { product_id: number; quantity: number }) => {
+          const product = await this.prismaService.$queryRaw(
+            //@ts-expect-error --undefined
+            `SELECT quantity FROM eshopinventory WHERE product_id = ${item.product_id}`,
+          );
+          const qtyInStock = product[0]?.quantity || 0;
+          if (qtyInStock >= item.quantity) {
+            return Promise.resolve();
+          } else {
+            insufficientItems.push(item.product_id);
+            return Promise.reject();
+          }
+        }
+      );
+  
+      try {
+        await Promise.all(promises);
+      } catch (error) {
+        // If any item had insufficient stock, return here
+        if (insufficientItems.length > 0) {
+          return {
+            statusCode: 400,
+            message: 'Insufficient stock for some items',
+            data: insufficientItems,
+          };
+        }
+        throw error; // rethrow other errors
+      }
+  
+      // If all items have sufficient stock, proceed to insert the sale
+      await this.prismaService.$executeRaw(
+        `INSERT INTO eshopsales (client_id, items) VALUES (${dto.client_id}, '${dto.items}')`
+      );
+  
+      // Update the stock quantities
+      const updatePromises = cartItems.map(
+        async (item: { product_id: number; quantity: number }) => {
+          await this.prismaService.$executeRaw(
+            `UPDATE eshopinventory SET quantity = quantity - ${item.quantity} WHERE product_id = ${item.product_id}`
+          );
+        }
+      );
+  
+      // Wait for all stock updates to complete
+      await Promise.all(updatePromises);
+  
+      return {
+        statusCode: 200,
+        message: 'Sale saved successfully',
+      };
+  
+    } catch (error) {
+      console.error(error);
+      return {
+        statusCode: 500,
+        message: 'Error while saving sale',
+        data: error,
+      };
+    }
+  }
+  
+
+  async retrieveSale(dto: genericFindDto) {
+    try {
+      const sale = await this.prismaService
+        .$queryRaw`SELECT * FROM sales WHERE sale_id = ${dto.id}`;
+
+      return {
+        statusCode: 200,
+        message: 'Sale retrieved successfully',
+        data: sale,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while retrieving sale',
+        data: error,
+      };
+    }
+  }
 
   //reports
   async getProductSalesReport() {}

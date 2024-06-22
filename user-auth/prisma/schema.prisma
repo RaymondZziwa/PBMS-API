@@ -82,7 +82,7 @@ model client {
   updatedAt       DateTime          @default(now()) @updatedAt
 }
 
-model sales {
+model eshopsales {
   sale_id            Int    @id @default(autoincrement())
   client      client   @relation(fields: [client_id], references: [client_id])
   client_id   Int    @unique

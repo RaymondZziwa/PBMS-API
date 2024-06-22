@@ -177,7 +177,7 @@ export class saveSaleDto {
 
   @IsNumber()
   @IsNotEmpty()
-  customer_id: number;
+  client_id: number;
 
   @IsString()
   @IsNotEmpty()
@@ -537,3 +537,4 @@ export class editSupplierDto {
   @IsString()
   address: string;
 }
+
