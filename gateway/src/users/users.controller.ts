@@ -120,7 +120,7 @@ export class UsersController {
     return this.natsClient.send({ cmd: 'REQUEST_ACCESS_KEY' }, req.body);
   }
 
-  //delete use
+  //delete user
   @Post('/delete-user')
   async deleteUser(@Req() req: Request) {
     const token = req['token'];
@@ -181,7 +181,13 @@ export class UsersController {
     return this.natsClient.send({ cmd: 'LOGIN' }, req.body);
   }
 
-  //reser-password
+  //login with access key
+  @Post('/login-with-access-key')
+  loginWithAccessKey(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'LOGIN_WITH_ACCESS_KEY' }, req.body);
+  }
+
+  //reset-password
   @Post('/reset-password')
   resetPassword(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'RESET_PASSWORD' }, req.body);

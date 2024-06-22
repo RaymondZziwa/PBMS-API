@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { env } from 'process';
 
 @Injectable()
 export class JwtTokenService {
@@ -18,10 +19,14 @@ export class JwtTokenService {
     message: string;
   }> {
     try {
-      const accessToken = this.jwtService.sign({
-        ...userData,
+      const accessToken = this.jwtService.sign(userData, {
+        expiresIn: '1d',
+        secret: env.secret_key,
       });
-      const refreshToken = this.jwtService.sign(userData, { expiresIn: '2d' });
+      const refreshToken = this.jwtService.sign(userData, {
+        expiresIn: '2d',
+        secret: env.secret_key,
+      });
       return {
         statusCode: 200,
         message: 'Access and refresh tokens have been successfully generated.',
@@ -41,9 +46,11 @@ export class JwtTokenService {
   }
 
   //function to verify jwt access and refresh tokens
-  verifyTokens(token: string) {
+  async verifyTokens(token: string) {
     try {
-      const isTokenValid = this.jwtService.verify(token);
+      const isTokenValid = await this.jwtService.verify(token, {
+        secret: env.secret_key,
+      });
       if (isTokenValid) {
         return true;
       }
