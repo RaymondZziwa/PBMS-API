@@ -1072,13 +1072,11 @@ export class AppService {
     try {
       const insufficientItems = [];
       const cartItems = JSON.parse(dto.items);
-  
+
       const promises = cartItems.map(
         async (item: { product_id: number; quantity: number }) => {
-          const product = await this.prismaService.$queryRaw(
-            //@ts-expect-error --undefined
-            `SELECT quantity FROM eshopinventory WHERE product_id = ${item.product_id}`,
-          );
+          const product = await this.prismaService
+            .$queryRaw`SELECT quantity FROM eshopinventory WHERE product_id = ${item.product_id}`;
           const qtyInStock = product[0]?.quantity || 0;
           if (qtyInStock >= item.quantity) {
             return Promise.resolve();
@@ -1086,9 +1084,9 @@ export class AppService {
             insufficientItems.push(item.product_id);
             return Promise.reject();
           }
-        }
+        },
       );
-  
+
       try {
         await Promise.all(promises);
       } catch (error) {
@@ -1102,29 +1100,26 @@ export class AppService {
         }
         throw error; // rethrow other errors
       }
-  
+
       // If all items have sufficient stock, proceed to insert the sale
-      await this.prismaService.$executeRaw(
-        `INSERT INTO eshopsales (client_id, items) VALUES (${dto.client_id}, '${dto.items}')`
-      );
-  
+      await this.prismaService
+        .$executeRaw`INSERT INTO eshopsales (client_id, items) VALUES (${dto.client_id}, ${dto.items})`;
+
       // Update the stock quantities
       const updatePromises = cartItems.map(
         async (item: { product_id: number; quantity: number }) => {
-          await this.prismaService.$executeRaw(
-            `UPDATE eshopinventory SET quantity = quantity - ${item.quantity} WHERE product_id = ${item.product_id}`
-          );
-        }
+          await this.prismaService
+            .$executeRaw`UPDATE eshopinventory SET quantity = quantity - ${item.quantity} WHERE product_id = ${item.product_id}`;
+        },
       );
-  
+
       // Wait for all stock updates to complete
       await Promise.all(updatePromises);
-  
+
       return {
         statusCode: 200,
         message: 'Sale saved successfully',
       };
-  
     } catch (error) {
       console.error(error);
       return {
@@ -1134,12 +1129,11 @@ export class AppService {
       };
     }
   }
-  
 
   async retrieveSale(dto: genericFindDto) {
     try {
       const sale = await this.prismaService
-        .$queryRaw`SELECT * FROM sales WHERE sale_id = ${dto.id}`;
+        .$queryRaw`SELECT * FROM eshopsales WHERE sale_id = ${dto.id}`;
 
       return {
         statusCode: 200,
@@ -1155,6 +1149,35 @@ export class AppService {
     }
   }
 
+  async getAllSales() {
+    try {
+      const salesList: {
+        sale_id: number;
+        items: string;
+        client_id: number;
+        registeredAt: any;
+      }[] = await this.prismaService.$queryRaw`SELECT * FROM eshopsales`;
+
+      const sortedSalesList = salesList.sort((a, b) => {
+        const dateA = new Date(a.registeredAt).setHours(0, 0, 0, 0);
+        const dateB = new Date(b.registeredAt).setHours(0, 0, 0, 0);
+        return dateB - dateA;
+      });
+
+      return {
+        statusCode: 200,
+        message: 'Sales list retrieved successfully',
+        data: sortedSalesList,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while retrieving all sales',
+        data: error,
+      };
+    }
+  }
+
   //reports
   async getProductSalesReport() {}
   async getProjectsSalesReport() {}
@@ -1163,4 +1186,10 @@ export class AppService {
   async getDayProjectsSalesReport() {}
   async getMonthProductsSalesReport() {}
   async getMonthProjectsSalesReport() {}
+
+  //generics
+  async addProductCategory() {}
+  async deleteProductCategory() {}
+  async addMUnit() {}
+  async deleteMUnit() {}
 }
