@@ -109,14 +109,6 @@ export class saveSaffronSaleDto {
   @IsString()
   @IsNotEmpty()
   amount_sold: string;
-
-  @IsDateString()
-  @IsNotEmpty()
-  sale_date: Date;
-
-  @IsString()
-  @IsNotEmpty()
-  points: string;
 }
 
 export class saffronSalesAnalysis {
@@ -538,3 +530,33 @@ export class editSupplierDto {
   address: string;
 }
 
+export class genericAddDto {
+  @IsNotEmpty()
+  @IsString()
+  name: string;
+}
+
+export class reportDto {
+  @IsDateString()
+  date: string;
+
+  @IsString()
+  month: number;
+
+  @IsDateString()
+  from_date: string;
+
+  @IsDateString()
+  to_date: string;
+}
+
+export class deleteSaffronSaleDto {
+  @IsNotEmpty()
+  id: number;
+
+  @IsNotEmpty()
+  user_id: number;
+
+  @IsNotEmpty()
+  points: number;
+}

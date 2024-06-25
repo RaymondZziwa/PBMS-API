@@ -77,39 +77,62 @@ model client {
   phone           String            @unique
   address         String?
   externalreceipt externalreceipt[]
-  sales           sales[]
+  eshopsales      eshopsales[]
+  mshopsales      mshopsales[]
   registeredAt    DateTime          @default(now())
   updatedAt       DateTime          @default(now()) @updatedAt
 }
 
 model eshopsales {
-  sale_id            Int    @id @default(autoincrement())
-  client      client   @relation(fields: [client_id], references: [client_id])
-  client_id   Int    @unique
-  items         String
-  registeredAt    DateTime          @default(now())
-  updatedAt       DateTime          @default(now()) @updatedAt
+  sale_id      Int      @id @default(autoincrement())
+  client       client   @relation(fields: [client_id], references: [client_id])
+  client_id    Int      @unique
+  items        String
+  totalCost    String
+  createdAt DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+}
+
+model eprojectssales {
+  sale_id      Int      @id @default(autoincrement())
+  client       client   @relation(fields: [client_id], references: [client_id])
+  client_id    Int      @unique
+  items        String
+  totalCost    String
+  createdAt DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+}
+
+model mshopsales {
+  sale_id      Int      @id @default(autoincrement())
+  client       client   @relation(fields: [client_id], references: [client_id])
+  client_id    Int      @unique
+  items        String
+  totalCost    String
+  registeredAt DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
 }
 
 model supplier {
-  supplier_id       Int               @id @default(autoincrement())
-  first_name      String
-  last_name       String
-  email           String?           @unique
-  phone           String            @unique
-  address         String?
-  registeredAt    DateTime          @default(now())
-  updatedAt       DateTime          @default(now()) @updatedAt
-  supplyrecords   supplyrecords[]
+  supplier_id   Int             @id @default(autoincrement())
+  first_name    String
+  last_name     String
+  email         String?         @unique
+  phone         String          @unique
+  address       String?
+  registeredAt  DateTime        @default(now())
+  updatedAt     DateTime        @default(now()) @updatedAt
+  supplyrecords supplyrecords[]
 }
 
 model supplyrecords {
-  supply_id     Int    @id @default(autoincrement())
-  supplier      supplier   @relation(fields: [supplier_id], references: [supplier_id])
-  supplier_id   Int
-  items         String
-  registeredAt    DateTime          @default(now())
-  updatedAt       DateTime          @default(now()) @updatedAt
+  supply_id    Int      @id @default(autoincrement())
+  supplier     supplier @relation(fields: [supplier_id], references: [supplier_id])
+  supplier_id  Int
+  items        String
+  totalCost    String
+  registeredAt DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
 }
 
 model product {
@@ -125,7 +148,6 @@ model product {
   externalreceipt               externalreceipt?          @relation(fields: [externalreceiptReceipt_number], references: [receipt_number])
   externalreceiptReceipt_number String?
 }
-
 
 model eshopinventory {
   inventory_id Int     @id @default(autoincrement())
@@ -180,25 +202,24 @@ model externalreceipt {
 }
 
 model saffronuser {
-  user_id        Int      @id @default(autoincrement())
-  username       String   @unique
-  email          String   @unique
-  password       String
-  totalpts       Int
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  saffronsale    saffronsale[]
+  user_id     Int           @id @default(autoincrement())
+  username    String        @unique
+  email       String        @unique
+  password    String
+  totalpts    Float
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  saffronsale saffronsale[]
 }
 
 model saffronsale {
-  sales_id    Int      @id @default(autoincrement())
-  saffronuser          saffronuser  @relation(fields: [user_id], references: [user_id])
+  sale_id    Int         @id @default(autoincrement())
+  saffronuser saffronuser @relation(fields: [user_id], references: [user_id])
   user_id     Int
   amount_sold Int
-  sale_date   DateTime
-  Points      Float
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  points      Float
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
 model massageincome {
@@ -242,4 +263,50 @@ model cheque {
   status            String
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+model munits {
+  unit_id     Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model productcategories {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model branch {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  department  department[]
+}
+
+model department {
+  id          Int      @id @default(autoincrement())
+  branch      branch   @relation(fields: [branch_id], references: [id])
+  branch_id   Int
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  role        role[]
+}
+
+model role {
+  id          Int        @id @default(autoincrement())
+  department  department @relation(fields: [dept_id], references: [id])
+  dept_id     Int
+  name        String
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
