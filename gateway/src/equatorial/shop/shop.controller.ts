@@ -163,154 +163,206 @@ export class equatorialShopController {
   getAllExpenses(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_ALL_EXPENSES' }, req.body);
   }
-  // @Get('/get-item-inventory-records')
-  // getItemInventoryRecords(@Req() req: Request) {
-  //   return this.natsClient.send(
-  //     { cmd: 'GET_ITEM_INVENTORY_RECORDS' },
-  //     req.body,
-  //   );
-  // }
 
-  // @Post('/issue-external-receipt')
-  // issueExternalReceipt(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'ISSUE_EXTERNAL_RECEIPT' }, req.body);
-  // }
+  //reports
+  @Get('/get-day-purchase-report')
+  getDayPurchaseReport(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_DAY_PURCHASE_REPORT' }, req.body);
+  }
 
-  // @Get('/get-external-receipts')
-  // getExternalReceipts(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'GET_EXTERNAL_RECEIPTS' }, req.body);
-  // }
+  @Get('/get-month-purchase-report')
+  getMonthPurchaseReport(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_MONTH_PURCHASE_REPORT' }, req.body);
+  }
 
-  // @Post('/approve-external-receipt')
-  // approveExternalReceipt(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'APPROVE_EXTERNAL_RECEIPTS' }, req.body);
-  // }
+  @Get('/get-day-products-sales-report')
+  getDayProductsSalesReport(@Req() req: Request) {
+    return this.natsClient.send(
+      { cmd: 'GET_DAY_PRODUCT_SALES_REPORT' },
+      req.body,
+    );
+  }
 
-  // @Post('/decline-external-receipt')
-  // declineExternalReceipt(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'DECLINE_EXTERNAL_RECEIPTS' }, req.body);
-  // }
+  @Get('/get-month-products-sales-report')
+  getMonthProductsSalesReport(@Req() req: Request) {
+    return this.natsClient.send(
+      { cmd: 'GET_MONTH_PRODUCT_SALES_REPORT' },
+      req.body,
+    );
+  }
 
-  // @Post('/saffron/save-sale')
-  // saveSaffronSale(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'SAFFRON_SAVE_SALE' }, req.body);
-  // }
+  @Get('/get-day-projects-sales-report')
+  getDayProjectsSalesReport(@Req() req: Request) {
+    return this.natsClient.send(
+      { cmd: 'GET_DAY_PROJECTS_SALES_REPORT' },
+      req.body,
+    );
+  }
 
-  // @Get('/saffron/daily-analysis')
-  // saffronDailyCompetitionAnalysis(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'SAFFRON_DAILY ANALYSIS' }, req.body);
-  // }
+  @Get('/get-month-projects-sales-report')
+  getMonthProjectsSalesReport(@Req() req: Request) {
+    return this.natsClient.send(
+      { cmd: 'GET_MONTH_PROJECTS_SALES_REPORT' },
+      req.body,
+    );
+  }
 
-  // @Get('/saffron/weekly-analysis')
-  // saffronWeeklyCompetitionAnalysis(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'SAFFRON_WEEKLY_ANALYSIS' }, req.body);
-  // }
+  //generics
+  @Post('/save-product-category')
+  saveProductCategory(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'SAVE_PRODUCT_CATEGORY' }, req.body);
+  }
 
-  // @Get('/saffron/monthly-analysis')
-  // saffronMonthlyCompetitionAnalysis(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'SAFFRON_MONTHLY_ANALYSIS' }, req.body);
-  // }
+  @Post('/save-munit')
+  saveMUnit(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'SAVE_MUNIT' }, req.body);
+  }
 
-  // @Get('/get-sale-data')
-  // getSaleData(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'GET_SALE_DATA' }, req.body);
-  // }
+  @Post('/delete-product-category')
+  deleteProductCategory(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'DELETE_PRODUCT_CATEGORY' }, req.body);
+  }
 
-  // @Get('/massage-income')
-  // getMassageIncomeSubmission(@Req() req: Request) {
-  //   return this.natsClient.send(
-  //     { cmd: 'GET_MASSAGE_INCOME_SUBMISSION' },
-  //     req.body,
-  //   );
-  // }
+  @Post('/delete-munit')
+  deleteMUnit(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'DELETE_MUNIT' }, req.body);
+  }
 
-  // @Post('/approve-income-submission')
-  // approveMassageIncomeSubmission(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'APPROVE_MASSAGE_INCOME' }, req.body);
-  // }
+  @Get('/get-all-product-categories')
+  getAllProductCategories(@Req() req: Request) {
+    return this.natsClient.send(
+      { cmd: 'GET_ALL_PRODUCT_CATEGORIES' },
+      req.body,
+    );
+  }
 
-  // @Post('/reject-income-submission')
-  // rejectMassageIncomeSubmission(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'REJECT_MASSAGE_INCOME' }, req.body);
-  // }
+  @Get('/get-all-munits')
+  getAllMUnits(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_ALL_MUNITS' }, req.body);
+  }
 
-  // @Get('/fetch-client-purchases')
-  // fetchClientSales(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'FETCH_CLIENT_PURCHASES' }, req.body);
-  // }
+  //pos
+  @Post('/save-sale')
+  saveSale(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'SAVE_SALE' }, req.body);
+  }
 
-  // @Post('/record-shop-expenses')
-  // recordShopExpense(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'RECORD_SHOP_EXPENSES' }, req.body);
-  // }
+  @Post('/delete-sale')
+  deleteSale(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'DELETE_SALE' }, req.body);
+  }
 
-  // @Get('/get-all-expenses')
-  // getAllExpenses(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'GET_ALL_EXPENSES' }, req.body);
-  // }
+  @Get('/get-sale')
+  retrieveSale(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'RETRIEVE_SALE' }, req.body);
+  }
 
-  // @Post('/view-expense-details')
-  // viewShopExpenseDetails(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'VIEW_EXPENSE_DETAILS' }, req.body);
-  // }
+  @Get('/get-all-sales')
+  getAllSales(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_ALL_SALES' }, req.body);
+  }
 
-  // @Post('record-cheque-details')
-  // recordChequeDetails(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'RECORD_CHEQUE_DETAILS' }, req.body);
-  // }
+  //massage
+  @Post('/decline-entry')
+  declineEntry(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'DECLINE_ENTRY' }, req.body);
+  }
 
-  // @Get('/get-all-cheques')
-  // getAllCheques() {
-  //   return this.natsClient.send({ cmd: 'GET_ALL_CHEQUES' }, '');
-  // }
+  @Post('/approve-income-entry')
+  approveEntry(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'APPROVE_ENTRY' }, req.body);
+  }
 
-  // @Get('/get-cheque-details')
-  // getChequeDetails(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'GET_CHEQUE_DETAILS' }, req.body);
-  // }
+  @Post('/delete-income-entry')
+  deleteEntry(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'DELETE_ENTRY' }, req.body);
+  }
 
-  // @Post('/change-cheque-status')
-  // changeChequeStatus(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'CHANGE_CHEQUE_STATUS' }, req.body);
-  // }
+  @Get('/get-all-massage-income-entries')
+  getAllIncomeEntries(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_INCOME_ENTRIES' }, req.body);
+  }
 
-  // @Post('/save-new-customer-details')
-  // saveNewCustomerDetails(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'SAVE_NEW_CUSTOMER_DETAILS' }, req.body);
-  // }
+  //supplier
+  @Post('/save-supplier')
+  saveSupplier(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'SAVE_NEW_SUPPLIER' }, req.body);
+  }
 
-  // @Get('/get-all-customers')
-  // getAllCustomerDetails() {
-  //   return this.natsClient.send({ cmd: 'GET_ALL_CUSTOMERS' }, '');
-  // }
+  @Post('/delete-supplier')
+  deleteSupplier(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'DELETE_SUPPLIER' }, req.body);
+  }
 
-  // @Get('/get-customer-details')
-  // getCustomerDetails(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'GET_CUSTOMER_DETAILS' }, req.body);
-  // }
+  @Post('/edit-supplier')
+  editSupplier(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'EDIT_SUPPLIER' }, req.body);
+  }
 
-  // @Get('/get-sales-records')
-  // getSalesRecords(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'GET_ALL_SALES' }, req.body);
-  // }
+  @Get('/get-supplier')
+  getSupplier(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_SUPPLIER' }, req.body);
+  }
 
-  // @Get('/get-reports')
-  // getReports(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'GET_REPORTS' }, req.body);
-  // }
+  @Post('/get-supplier-supplies')
+  getSupplierSupplies(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_SUPPLIER_SUPPLIES' }, req.body);
+  }
 
-  // @Get('/get-daily-report')
-  // getDailyReport(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'GET_DAILY_REPORT' }, req.body);
-  // }
+  @Post('/get-all-suppliers')
+  getAllSuppliers(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_ALL_SUPPLIERS' }, req.body);
+  }
 
-  // @Get('/get-weekly-report')
-  // getWeeklyReport(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'GET_WEEKLY_REPORT' }, req.body);
-  // }
+  //client
+  @Post('/save-client')
+  saveClient(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'SAVE_NEW_CLIENT' }, req.body);
+  }
 
-  // @Get('/get-monthly-report')
-  // getMonthlyReport(@Req() req: Request) {
-  //   return this.natsClient.send({ cmd: 'GET_MONTHLY_REPORT' }, req.body);
-  // }
+  @Post('/delete-client')
+  deleteClient(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'DELETE_CLIENT' }, req.body);
+  }
+
+  @Post('/edit-client')
+  editClient(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'EDIT_CLIENT' }, req.body);
+  }
+
+  @Get('/get-client')
+  getClient(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_CLIENT' }, req.body);
+  }
+
+  @Get('/get-client-purchases')
+  getClientPurchases(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_CLIENT_PURCHASES' }, req.body);
+  }
+
+  @Get('/get-all-clients')
+  getAllClients(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_ALL_CLIENTS' }, req.body);
+  }
+
+  //saffron
+  @Post('/save-saffron-sale')
+  saveSaffronSale(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'SAVE_SAFFRON_SALE' }, req.body);
+  }
+
+  @Post('/delete-saffron-sale')
+  deleteSaffronSale(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'DELETE_SAFFRON_SALE' }, req.body);
+  }
+
+  @Post('/get-saffron-sales')
+  getSaffronSales(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_SAFFRON_SALES' }, req.body);
+  }
+
+  @Post('/get-saffron-standings')
+  getSaffronStandings(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_SAFFRON_STANDINGS' }, req.body);
+  }
 }

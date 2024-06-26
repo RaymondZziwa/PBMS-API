@@ -1,17 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import {
+  deleteSaffronSaleDto,
   editClientDto,
   editSupplierDto,
+  genericAddDto,
   genericEditDto,
   genericFindDto,
   registerProductDto,
   registerProjectDto,
+  reportDto,
   saveClientDto,
   saveExpenseDto,
   saveProductInventoryDepleteDto,
   saveProductInventoryRestockDto,
   saveProjectInventoryDepleteDto,
   saveProjectInventoryRestockDto,
+  saveSaffronSaleDto,
   saveSaleDto,
   saveSupplierDto,
   updateExpenseDto,
@@ -828,13 +832,39 @@ export class AppService {
 
   async getClientPurchasesList(dto: genericFindDto) {
     try {
-      const suppliesList = await this.prismaService
-        .$queryRaw`SELECT * FROM sales WHERE client_id = ${dto.id}`;
+      const productPurchasesList: {
+        items: string;
+        totalCost: string;
+        createdAt: string;
+      }[] = await this.prismaService
+        .$queryRaw`SELECT items, totalCost, createdAt FROM eshopsales WHERE client_id = ${dto.id}`;
+
+      const projectPurchasesList: {
+        items: string;
+        totalCost: string;
+        createdAt: string;
+      }[] = await this.prismaService
+        .$queryRaw`SELECT items, totalCost, createdAt FROM eprojectssales WHERE client_id = ${dto.id}`;
+
+      const combinedPurchasesList = [
+        ...productPurchasesList,
+        ...projectPurchasesList,
+      ];
+
+      const sortedList: {
+        items: string;
+        totalCost: string;
+        createdAt: string;
+      }[] = combinedPurchasesList.sort((a, b) => {
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      });
 
       return {
         statusCode: 200,
         message: 'Client purhases listing has been successfully retrieved',
-        data: suppliesList,
+        data: sortedList,
       };
     } catch (error) {
       return {
@@ -980,24 +1010,22 @@ export class AppService {
     }
   }
 
-  //saffron
-  async saveSaffronSale() {}
-  async getSaffronSales() {}
-  async getSaffronStandings() {}
-
   //massage
   async getIncomeEntries() {
     try {
-      const entriesList: [] = await this.prismaService.$queryRaw(
-        //@ts-expect-error --Not necessary
-        `SELECT * FROM massageincome`,
-      );
+      const entriesList: { createdAt: any }[] = await this.prismaService
+        .$queryRaw`SELECT * FROM massageincome`;
 
+      const sortedList = entriesList.sort((a, b) => {
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      });
       if (entriesList.length > 0) {
         return {
           statusCode: 200,
           message: 'Income entries listing has been successfully retrieved',
-          data: entriesList,
+          data: sortedList,
         };
       } else {
         return {
@@ -1067,18 +1095,37 @@ export class AppService {
     }
   }
 
+  async deleteEntry(dto: genericFindDto) {
+    try {
+      await this.prismaService
+        .$queryRaw`DELETE FROM massageincome WHERE submission_id = ${dto.id}`;
+
+      const updatedEntriesList = await this.getIncomeEntries();
+
+      return {
+        statusCode: 200,
+        message: 'Entry has been rejected',
+        data: updatedEntriesList,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while rejecting entry',
+        data: error,
+      };
+    }
+  }
+
   //pos
   async saveSale(dto: saveSaleDto) {
     try {
       const insufficientItems = [];
       const cartItems = JSON.parse(dto.items);
-  
+
       const promises = cartItems.map(
         async (item: { product_id: number; quantity: number }) => {
-          const product = await this.prismaService.$queryRaw(
-            //@ts-expect-error --undefined
-            `SELECT quantity FROM eshopinventory WHERE product_id = ${item.product_id}`,
-          );
+          const product = await this.prismaService
+            .$queryRaw`SELECT quantity FROM eshopinventory WHERE product_id = ${item.product_id}`;
           const qtyInStock = product[0]?.quantity || 0;
           if (qtyInStock >= item.quantity) {
             return Promise.resolve();
@@ -1086,9 +1133,9 @@ export class AppService {
             insufficientItems.push(item.product_id);
             return Promise.reject();
           }
-        }
+        },
       );
-  
+
       try {
         await Promise.all(promises);
       } catch (error) {
@@ -1102,29 +1149,26 @@ export class AppService {
         }
         throw error; // rethrow other errors
       }
-  
+
       // If all items have sufficient stock, proceed to insert the sale
-      await this.prismaService.$executeRaw(
-        `INSERT INTO eshopsales (client_id, items) VALUES (${dto.client_id}, '${dto.items}')`
-      );
-  
+      await this.prismaService
+        .$executeRaw`INSERT INTO eshopsales (client_id, items) VALUES (${dto.client_id}, ${dto.items})`;
+
       // Update the stock quantities
       const updatePromises = cartItems.map(
         async (item: { product_id: number; quantity: number }) => {
-          await this.prismaService.$executeRaw(
-            `UPDATE eshopinventory SET quantity = quantity - ${item.quantity} WHERE product_id = ${item.product_id}`
-          );
-        }
+          await this.prismaService
+            .$executeRaw`UPDATE eshopinventory SET quantity = quantity - ${item.quantity} WHERE product_id = ${item.product_id}`;
+        },
       );
-  
+
       // Wait for all stock updates to complete
       await Promise.all(updatePromises);
-  
+
       return {
         statusCode: 200,
         message: 'Sale saved successfully',
       };
-  
     } catch (error) {
       console.error(error);
       return {
@@ -1134,12 +1178,11 @@ export class AppService {
       };
     }
   }
-  
 
   async retrieveSale(dto: genericFindDto) {
     try {
       const sale = await this.prismaService
-        .$queryRaw`SELECT * FROM sales WHERE sale_id = ${dto.id}`;
+        .$queryRaw`SELECT * FROM eshopsales WHERE sale_id = ${dto.id}`;
 
       return {
         statusCode: 200,
@@ -1155,12 +1198,394 @@ export class AppService {
     }
   }
 
+  async getAllSales() {
+    try {
+      const salesList: {
+        sale_id: number;
+        items: string;
+        client_id: number;
+        registeredAt: any;
+      }[] = await this.prismaService.$queryRaw`SELECT * FROM eshopsales`;
+
+      const sortedSalesList = salesList.sort((a, b) => {
+        const dateA = new Date(a.registeredAt).setHours(0, 0, 0, 0);
+        const dateB = new Date(b.registeredAt).setHours(0, 0, 0, 0);
+        return dateB - dateA;
+      });
+
+      return {
+        statusCode: 200,
+        message: 'Sales list retrieved successfully',
+        data: sortedSalesList,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while retrieving all sales',
+        data: error,
+      };
+    }
+  }
+
+  async deleteSale(dto: genericFindDto) {
+    try {
+      const saleDetails = await this.prismaService
+        .$queryRaw`SELECT items FROM eshopsales WHERE sale_id = ${dto.id}`;
+
+      if (saleDetails[0].items) {
+        const items = JSON.parse(saleDetails[0].items);
+
+        const updatePromises = items.map(
+          async (item: { product_id: number; quantity: number }) => {
+            await this.prismaService
+              .$executeRaw`UPDATE eshopinventory SET quantity = quantity + ${item.quantity} WHERE product_id = ${item.product_id}`;
+          },
+        );
+
+        // Wait for all stock updates to complete
+        await Promise.all(updatePromises);
+      }
+      await this.prismaService
+        .$queryRaw`DELETE FROM eshopsales WHERE sale_id = ${dto.id}`;
+
+      const updatedSalesList = await this.getAllSales();
+      return {
+        statusCode: 200,
+        message: 'Sale deleted successfully',
+        data: updatedSalesList,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while deleting sale',
+        data: error,
+      };
+    }
+  }
+
+  //generics
+  async addProductCategory(dto: genericAddDto) {
+    try {
+      await this.prismaService
+        .$executeRaw`INSERT INTO productcategory (id, name) VALUES (${dto.name})`;
+
+      const units = await this.getUnits();
+      return {
+        statusCode: 200,
+        message: 'Product category added successfully',
+        data: units,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while adding product category',
+        data: error,
+      };
+    }
+  }
+
+  async getProductCategories() {
+    try {
+      const categories = await this.prismaService
+        .$queryRaw`SELECT * FROM productcategories`;
+      return {
+        statusCode: 200,
+        message: 'Product categories retrieved successfully',
+        data: categories,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while fetching product categories',
+        data: error,
+      };
+    }
+  }
+  async deleteProductCategory(dto: genericFindDto) {
+    try {
+      await this.prismaService
+        .$executeRaw`DELETE FROM productcategories WHERE id = ${dto.id}`;
+      const units = await this.getProductCategories();
+      return {
+        statusCode: 200,
+        message: 'Product category deleted successfully',
+        data: units,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while deleting product category',
+        data: error,
+      };
+    }
+  }
+
+  async addMUnit(dto: genericAddDto) {
+    try {
+      await this.prismaService
+        .$executeRaw`INSERT INTO munits (unit_id, name) VALUES (${dto.name})`;
+
+      const units = await this.getUnits();
+      return {
+        statusCode: 200,
+        message: 'Measurement unit added successfully',
+        data: units,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while adding measurement unit',
+        data: error,
+      };
+    }
+  }
+
+  async getUnits() {
+    try {
+      const units = await this.prismaService.$queryRaw`SELECT * FROM munits`;
+      return {
+        statusCode: 200,
+        message: 'Measurement units retrieved successfully',
+        data: units,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while fetching measurement units',
+        data: error,
+      };
+    }
+  }
+
+  async deleteMUnit(dto: genericFindDto) {
+    try {
+      await this.prismaService
+        .$executeRaw`DELETE FROM munits WHERE unit_id = ${dto.id}`;
+      const units = await this.getUnits();
+      return {
+        statusCode: 200,
+        message: 'Measurement unit deleted successfully',
+        data: units,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while deleting measurement units',
+        data: error,
+      };
+    }
+  }
+
   //reports
-  async getProductSalesReport() {}
-  async getProjectsSalesReport() {}
-  async getPurchaseReport() {}
-  async getDayProductsSalesReport() {}
-  async getDayProjectsSalesReport() {}
-  async getMonthProductsSalesReport() {}
-  async getMonthProjectsSalesReport() {}
+  async getDayPurchaseReport(dto: reportDto) {
+    try {
+      const purchasesList = await this.prismaService
+        .$queryRaw`SELECT supplier_id, items, totalCost FROM supplyrecords JOIN supplier ON supplyrecords.suppier_id = supplier.supplier_id WHERE DATE(createdAt) = ${dto.date}`;
+      return {
+        statusCode: 200,
+        message: `Purchase report for ${dto.date} retrieved successfully`,
+        data: purchasesList,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: `Error while fetching the purchase report for ${dto.date}`,
+        data: error,
+      };
+    }
+  }
+
+  async getMonthPurchaseReport(dto: reportDto) {
+    try {
+      const purchasesList = await this.prismaService
+        .$queryRaw`SELECT supplier_id, items, totalCost FROM supplyrecords JOIN supplier ON supplyrecords.suppier_id = supplier.supplier_id WHERE DATE_FORMAT(createdAt, '%Y-%m') = ${dto.date}`;
+      return {
+        statusCode: 200,
+        message: `Purchase report for ${dto.date} retrieved successfully`,
+        data: purchasesList,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: `Error while fetching the purchase report for ${dto.date}`,
+        data: error,
+      };
+    }
+  }
+
+  async getDayProductsSalesReport(dto: reportDto) {
+    try {
+      const salesList = await this.prismaService
+        .$queryRaw`SELECT client_id, items, totalCost FROM eshopsales JOIN client ON eshopsales.client_id = client.client_id WHERE DATE(createdAt) = ${dto.date}`;
+      return {
+        statusCode: 200,
+        message: `Product sales report for ${dto.date} retrieved successfully`,
+        data: salesList,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: `Error while fetching the product sales report for ${dto.date}`,
+        data: error,
+      };
+    }
+  }
+
+  async getMonthProductsSalesReport(dto: reportDto) {
+    try {
+      const salesList = await this.prismaService
+        .$queryRaw`SELECT client_id, items, totalCost FROM eshopsales JOIN client ON eshopsales.client_id = client.client_id WHERE DATE_FORMAT(createdAt, '%Y-%m') = ${dto.date}`;
+      return {
+        statusCode: 200,
+        message: `Product sales report for ${dto.date} retrieved successfully`,
+        data: salesList,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: `Error while fetching the product sales report for ${dto.date}`,
+        data: error,
+      };
+    }
+  }
+
+  async getDayProjectsSalesReport(dto: reportDto) {
+    try {
+      const salesList = await this.prismaService
+        .$queryRaw`SELECT project_id, client_id, items, totalCost FROM projectsales JOIN client ON projectsales.client_id = client.client_id WHERE DATE(createdAt) = ${dto.date}`;
+      return {
+        statusCode: 200,
+        message: `Project sales report for ${dto.date} retrieved successfully`,
+        data: salesList,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: `Error while fetching the project sales report for ${dto.date}`,
+        data: error,
+      };
+    }
+  }
+
+  async getMonthProjectsSalesReport(dto: reportDto) {
+    try {
+      const salesList = await this.prismaService
+        .$queryRaw`SELECT project_id, client_id, items, totalCost FROM projectsales JOIN client ON projectsales.client_id = client.client_id WHERE DATE_FORMAT(createdAt, '%Y-%m') = ${dto.date}`;
+      return {
+        statusCode: 200,
+        message: `Project sales report for ${dto.date} retrieved successfully`,
+        data: salesList,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: `Error while fetching the project sales report for ${dto.date}`,
+        data: error,
+      };
+    }
+  }
+
+  //saffron
+  async saveSaffronSale(dto: saveSaffronSaleDto) {
+    try {
+      const points = parseFloat(dto.amount_sold) / 2;
+      const user = await this.prismaService
+        .$queryRaw`SELECT totalpts FROM saffronuser WHERE user_id = ${dto.user_id}`;
+
+      if (user[0].totalpts) {
+        const newPoints = user[0].totalpts + points;
+        await this.prismaService
+          .$executeRaw`UPDATE saffronuser SET totalpts = ${newPoints} WHERE user_id = ${dto.user_id}`;
+      }
+      await this.prismaService
+        .$executeRaw`INSERT INTO saffronsale (user_id, amount_sold, points) VALUES (${dto.user_id}, ${dto.amount_sold}, ${points})`;
+
+      const getAllSaffronSales = await this.getSaffronSales();
+
+      return {
+        statusCode: 200,
+        message: 'All saffron sales retrieved successfully',
+        data: getAllSaffronSales,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while saving saffron sale',
+        data: error,
+      };
+    }
+  }
+
+  async getSaffronSales() {
+    try {
+      const sales = await this.prismaService
+        .$queryRaw`SELECT saffronsale.user_id, saffronsale.amount_sold, saffronsale.createdAt FROM saffronsale JOIN saffronuser ON saffronsale.user_id = saffronuser.user_id`;
+
+      return {
+        statusCode: 200,
+        message: 'All saffron sales retrieved successfully',
+        data: sales,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while fetching saffron sales',
+        data: error,
+      };
+    }
+  }
+
+  async deleteSaffronSale(dto: deleteSaffronSaleDto) {
+    try {
+      await this.prismaService
+        .$queryRaw`DELETE FROM saffronsale WHERE sale_id = ${dto.id}`;
+
+      const user = await this.prismaService
+        .$queryRaw`SELECT totalpts FROM saffronuser WHERE user_id = ${dto.user_id}`;
+
+      if (user[0].totalpts) {
+        const newPoints = user[0].totalpts - dto.points;
+        await this.prismaService
+          .$executeRaw`UPDATE saffronuser SET totalpts = ${newPoints} WHERE user_id = ${dto.user_id}`;
+      }
+
+      const updatedSales = await this.getSaffronSales();
+      return {
+        statusCode: 200,
+        message: 'Saffron sale has been deleted successfully',
+        data: updatedSales,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while deleting saffron sale',
+        data: error,
+      };
+    }
+  }
+
+  async getSaffronStandings() {
+    try {
+      const currentPts: { username: string; totalpts: number }[] = await this
+        .prismaService.$queryRaw`SELECT username, totalpts FROM saffronuser`;
+
+      const standings = currentPts.sort((a, b) => {
+        const usrA = a.totalpts;
+        const usrB = b.totalpts;
+        return usrA - usrB;
+      });
+
+      return {
+        statusCode: 200,
+        message: 'Saffron standings retrieved successfully',
+        data: standings,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while getting standings',
+        data: error,
+      };
+    }
+  }
 }
