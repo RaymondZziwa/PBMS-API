@@ -23,12 +23,6 @@ import {
 } from './dto/equatorial_shop.dto';
 import { PrismaService } from './prisma/prisma.service';
 
-interface responseInterface {
-  statusCode: number;
-  message: string;
-  data: any;
-}
-
 @Injectable()
 export class AppService {
   constructor(private readonly prismaService: PrismaService) {}
@@ -132,23 +126,23 @@ export class AppService {
 
   async shopRestock(dto: saveProductInventoryRestockDto) {
     try {
-      const product: responseInterface = await this.getProduct(dto.product_id);
-      if (product.data.length > 0) {
-        const currentQuantity = product.data[0].quantity;
+      const items = JSON.parse(dto.items);
 
-        const newQuantity =
-          parseFloat(currentQuantity) + parseFloat(dto.quantity);
+      const updatedPromises = items.map(
+        async (item: {
+          product_id: number;
+          quantity: number;
+          units: string;
+        }) => {
+          await this.prismaService
+            .$executeRaw`UPDATE eshopinventory SET quantity = quantity + ${item.quantity} WHERE product_id = ${item.product_id}`;
+        },
+      );
 
-        await this.prismaService
-          .$queryRaw`UPDATE eshopinventory SET quantity = ${newQuantity} WHERE product_id =
-        ${dto.product_id}`;
-      } else {
-        console.log('2');
-        await this.prismaService
-          .$executeRaw`INSERT INTO eshopinventory (product_id, quantity, units) VALUES (${dto.product_id}, ${dto.quantity}, ${dto.units})`;
-      }
+      await Promise.all(updatedPromises);
+
       await this.prismaService
-        .$executeRaw`INSERT INTO eshoprestockrecord (product_id, quantity, units, source, notes, transaction_date, authorized_by) VALUES (${dto.product_id}, ${dto.quantity}, ${dto.units}, ${dto.source}, ${dto.notes}, ${dto.transaction_date}, ${dto.authorized_by})`;
+        .$executeRaw`INSERT INTO eshoprestockrecord (items, source, notes, transaction_date, authorized_by) VALUES (${dto.items}, ${dto.source}, ${dto.notes}, ${dto.transaction_date}, ${dto.authorized_by})`;
 
       const updatedRecords = await this.getProductRestockRecords();
 
@@ -168,39 +162,58 @@ export class AppService {
 
   async depleteStock(dto: saveProductInventoryDepleteDto) {
     try {
-      const depletionQuantity = parseFloat(dto.quantity);
-      const product: responseInterface = await this.getProduct(dto.product_id);
+      const insufficientItems = [];
+      const items = JSON.parse(dto.items);
 
-      if (
-        !product ||
-        parseFloat(product.data[0].quantity) < depletionQuantity
-      ) {
-        return {
-          statusCode: 400,
-          message: 'Insufficient stock',
-          data: null,
-        };
-      } else {
-        await this.prismaService
-          .$queryRaw`INSERT INTO eshopStocktakeoutrecord (product_id, quantity, units, destination, notes, transaction_date, authorized_by) VALUES (${dto.product_id}, ${dto.quantity}, ${dto.units}, ${dto.destination}, ${dto.notes}, ${dto.transaction_date}, ${dto.authorized_by})`;
+      const promises = items.map(
+        async (item: { product_id: number; quantity: number }) => {
+          const product = await this.prismaService
+            .$queryRaw`SELECT quantity FROM eshopinventory WHERE product_id = ${item.product_id}`;
+          const qtyInStock = product[0]?.quantity || 0;
+          if (qtyInStock >= item.quantity) {
+            return Promise.resolve();
+          } else {
+            insufficientItems.push(item.product_id);
+            return Promise.reject();
+          }
+        },
+      );
 
-        const currentQuantity = product.data[0].quantity;
-
-        const newQuantity =
-          parseFloat(currentQuantity) - parseFloat(dto.quantity);
-
-        await this.prismaService
-          .$queryRaw`UPDATE eshopinventory SET quantity = ${newQuantity} WHERE product_id =
-          ${dto.product_id}`;
-
-        const updatedRecords = await this.getProductDepleteRecords();
-
-        return {
-          statusCode: 200,
-          message: 'Product depletion successful',
-          data: updatedRecords,
-        };
+      try {
+        await Promise.all(promises);
+      } catch (error) {
+        // If any item had insufficient stock, return here
+        if (insufficientItems.length > 0) {
+          return {
+            statusCode: 400,
+            message: 'Insufficient stock for some items',
+            data: insufficientItems,
+          };
+        }
+        throw error; // rethrow other errors
       }
+
+      // Update the stock quantities
+      const updatePromises = items.map(
+        async (item: { product_id: number; quantity: number }) => {
+          await this.prismaService
+            .$executeRaw`UPDATE eshopinventory SET quantity = quantity - ${item.quantity} WHERE product_id = ${item.product_id}`;
+        },
+      );
+
+      // Wait for all stock updates to complete
+      await Promise.all(updatePromises);
+
+      await this.prismaService
+        .$queryRaw`INSERT INTO eshopStocktakeoutrecord (product_id, quantity, units, destination, notes, transaction_date, authorized_by) VALUES (${dto.items}, ${dto.destination}, ${dto.notes}, ${dto.transaction_date}, ${dto.authorized_by})`;
+
+      const updatedRecords = await this.getProductDepleteRecords();
+
+      return {
+        statusCode: 200,
+        message: 'Product depletion successful',
+        data: updatedRecords,
+      };
     } catch (error) {
       return {
         statusCode: 500,
@@ -329,11 +342,11 @@ export class AppService {
       await this.prismaService
         .$queryRaw`INSERT INTO project (name, price, barcode) VALUES (${dto.name}, ${dto.price}, ${ISBN_code})`;
 
-      const productsList = await this.getAllProducts();
+      const projectsList = await this.getAllProjects();
       return {
         statusCode: 200,
         message: 'Project has been registered successfully',
-        data: productsList,
+        data: projectsList.data,
       };
     } catch (error) {
       return {
@@ -371,7 +384,7 @@ export class AppService {
       return {
         statusCode: 200,
         message: 'Project updated successfully',
-        data: updatedProjects,
+        data: updatedProjects.data,
       };
     } catch (error) {
       return {
@@ -403,13 +416,13 @@ export class AppService {
 
   async getAllProjects() {
     try {
-      const productsList = await this.prismaService
-        .$executeRaw`SELECT * FROM project;`;
+      const projectsList = await this.prismaService
+        .$queryRaw`SELECT * FROM project;`;
 
       return {
         statusCode: 200,
         message: 'Project list has been fetched successfully',
-        data: productsList,
+        data: projectsList,
       };
     } catch (error) {
       return {
@@ -422,27 +435,39 @@ export class AppService {
 
   async projectsRestock(dto: saveProjectInventoryRestockDto) {
     try {
-      await this.prismaService
-        .$queryRaw`INSERT INTO eshopprojecttakeoutrecord (product_id, quantity, units, source, notes, transaction_date, authorized_by) VALUES ${dto.project_id}, ${dto.quantity}, ${dto.units}, ${dto.source}, ${dto.notes}, ${dto.transaction_date}, ${dto.authorized_by}`;
+      const items = JSON.parse(dto.items);
 
-      const project = await this.getProject(dto.project_id);
-      const currentQuantity = project.data[0].quantity;
+      const updatedPromises = items.map(
+        async (item: {
+          project_id: number;
+          quantity: number;
+          units: string;
+        }) => {
+          const project: [] = await this.prismaService
+            .$queryRaw`SELECT * FROM eprojectsinventory WHERE project_id = ${item.project_id}`;
 
-      const newQuantity =
-        parseFloat(currentQuantity) + parseFloat(dto.quantity);
+          if (project.length > 0) {
+            await this.prismaService
+              .$executeRaw`UPDATE eprojectsinventory SET quantity = quantity + ${item.quantity} WHERE project_id = ${item.project_id}`;
+          } else {
+            await this.prismaService
+              .$executeRaw`INSERT INTO eprojectsinventory (project_id, quantity, units) VALUES
+            (${item.project_id}, ${item.quantity}, '${item.units}');`;
+          }
+        },
+      );
 
-      await this.prismaService
-        .$queryRaw`UPDATE eprojectsinventory SET quantity = ${newQuantity} WHERE product_id =
-          ${dto.project_id}`;
+      await Promise.all(updatedPromises);
 
-      const updatedRecords = await this.getProductRestockRecords();
+      const updatedRecords = await this.getProjectRestockRecords();
 
       return {
         statusCode: 200,
-        message: 'Product depletion successful',
-        data: updatedRecords,
+        message: 'Projects restock successful',
+        data: updatedRecords.data,
       };
     } catch (error) {
+      console.log(error);
       return {
         statusCode: 500,
         message: 'Error while restocking project',
@@ -453,41 +478,50 @@ export class AppService {
 
   async depleteProjects(dto: saveProjectInventoryDepleteDto) {
     try {
-      const depletionQuantity = parseFloat(dto.quantity);
-      const project: responseInterface = await this.getProduct(dto.project_id);
+      const insufficientItems: number[] = [];
+      const items: { project_id: number; quantity: number }[] = JSON.parse(
+        dto.items,
+      );
 
-      if (parseFloat(project.data[0].quantity) < depletionQuantity) {
+      // Check stock for all items
+      for (const item of items) {
+        const project = await this.prismaService.$queryRaw`
+          SELECT quantity FROM eprojectsinventory WHERE project_id = ${item.project_id}`;
+        const qtyInStock = project[0]?.quantity || 0;
+        if (qtyInStock < item.quantity) {
+          insufficientItems.push(item.project_id);
+        }
+      }
+
+      if (insufficientItems.length > 0) {
         return {
           statusCode: 400,
-          message: 'Insufficient stock',
-          data: null,
-        };
-      } else {
-        await this.prismaService
-          .$queryRaw`INSERT INTO eshopprojecttakeoutrecord (product_id, quantity, units, destination, notes, transaction_date, authorized_by) VALUES ${dto.project_id}, ${dto.quantity}, ${dto.units}, ${dto.destination}, ${dto.notes}, ${dto.transaction_date}, ${dto.authorized_by}`;
-
-        const currentQuantity = project.data[0].quantity;
-
-        const newQuantity =
-          parseFloat(currentQuantity) - parseFloat(dto.quantity);
-
-        await this.prismaService
-          .$queryRaw`UPDATE eprojectsinventory SET quantity = ${newQuantity} WHERE product_id =
-          ${dto.project_id}`;
-
-        const updatedRecords = await this.getProductRestockRecords();
-
-        return {
-          statusCode: 200,
-          message: 'Project depletion successful',
-          data: updatedRecords,
+          message: 'Insufficient stock for some items',
+          data: insufficientItems,
         };
       }
+
+      // Update the stock quantities
+      const updatePromises = items.map(
+        (item) =>
+          this.prismaService.$executeRaw`
+          UPDATE eprojectsinventory SET quantity = quantity - ${item.quantity} WHERE project_id = ${item.project_id}`,
+      );
+
+      await Promise.all(updatePromises);
+
+      const updatedRecords = await this.getProjectDepleteRecords();
+
+      return {
+        statusCode: 200,
+        message: 'Project depletion successful',
+        data: updatedRecords.data,
+      };
     } catch (error) {
       return {
         statusCode: 500,
         message: 'Error while depleting project',
-        data: error,
+        data: error.message || error,
       };
     }
   }
@@ -495,7 +529,7 @@ export class AppService {
   async getEquatorialProjectStock() {
     try {
       const stockData = await this.prismaService
-        .$executeRaw`SELECT * FROM eprojectsinventory JOIN product ON eprojectsinventory.product_id = product.product_id`;
+        .$executeRaw`SELECT * FROM eprojectsinventory JOIN project ON eprojectsinventory.project_id = project.project_id`;
 
       return {
         statusCode: 200,
@@ -792,14 +826,22 @@ export class AppService {
 
   async getClient(dto: genericFindDto) {
     try {
-      const newClientList = await this.prismaService
+      const newClientList: [] = await this.prismaService
         .$queryRaw`SELECT * FROM client WHERE client_id = ${dto.id}`;
 
-      return {
-        statusCode: 200,
-        message: 'Client retrieved successfully',
-        data: newClientList,
-      };
+      if (newClientList.length > 0) {
+        return {
+          statusCode: 200,
+          message: 'Client retrieved successfully',
+          data: newClientList,
+        };
+      } else {
+        return {
+          statusCode: 400,
+          message: 'No client found',
+          data: newClientList,
+        };
+      }
     } catch (error) {
       return {
         statusCode: 500,
@@ -895,6 +937,7 @@ export class AppService {
       };
     }
   }
+
   async editSupplier(dto: editSupplierDto) {
     try {
       const { supplier_id, ...updateData } = dto;
@@ -927,11 +970,12 @@ export class AppService {
     } catch (error) {
       return {
         statusCode: 500,
-        message: 'Error while updating supplier',
+        message: 'Error while updating supplier information',
         data: error,
       };
     }
   }
+
   async getAllSuppliers() {
     try {
       const suppliersList = await this.prismaService
@@ -953,14 +997,22 @@ export class AppService {
 
   async getSupplier(dto: genericFindDto) {
     try {
-      const suppliersList = await this.prismaService
+      const suppliersList: [] = await this.prismaService
         .$queryRaw`SELECT * FROM supplier WHERE supplier_id = ${dto.id}`;
 
-      return {
-        statusCode: 200,
-        message: 'Supplier retrieved successfully',
-        data: suppliersList,
-      };
+      if (suppliersList.length > 0) {
+        return {
+          statusCode: 200,
+          message: 'Supplier retrieved successfully',
+          data: suppliersList,
+        };
+      } else {
+        return {
+          statusCode: 400,
+          message: 'No supplier found',
+          data: suppliersList,
+        };
+      }
     } catch (error) {
       return {
         statusCode: 500,

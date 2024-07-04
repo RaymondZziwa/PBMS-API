@@ -78,29 +78,30 @@ model client {
   address         String?
   externalreceipt externalreceipt[]
   eshopsales      eshopsales[]
+  eprojectssales  eprojectssales[]
   mshopsales      mshopsales[]
   registeredAt    DateTime          @default(now())
   updatedAt       DateTime          @default(now()) @updatedAt
 }
 
 model eshopsales {
-  sale_id      Int      @id @default(autoincrement())
-  client       client   @relation(fields: [client_id], references: [client_id])
-  client_id    Int      @unique
-  items        String
-  totalCost    String
+  sale_id   Int      @id @default(autoincrement())
+  client    client   @relation(fields: [client_id], references: [client_id])
+  client_id Int      @unique
+  items     String
+  totalCost String
   createdAt DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model eprojectssales {
-  sale_id      Int      @id @default(autoincrement())
-  client       client   @relation(fields: [client_id], references: [client_id])
-  client_id    Int      @unique
-  items        String
-  totalCost    String
+  sale_id   Int      @id @default(autoincrement())
+  client    client   @relation(fields: [client_id], references: [client_id])
+  client_id Int      @unique
+  items     String
+  totalCost String
   createdAt DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model mshopsales {
@@ -143,10 +144,18 @@ model product {
   createdAt                     DateTime                  @default(now())
   updatedAt                     DateTime                  @default(now()) @updatedAt
   eshopinventory                eshopinventory[]
-  eshoprestockrecord            eshoprestockrecord[]
-  eshopStocktakeoutrecord       eshopStocktakeoutrecord[]
   externalreceipt               externalreceipt?          @relation(fields: [externalreceiptReceipt_number], references: [receipt_number])
   externalreceiptReceipt_number String?
+}
+
+model project {
+  project_id            Int                     @id @default(autoincrement())
+  name                  String
+  price                 Float
+  barcode               String
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @default(now()) @updatedAt
+  eprojectsinventory    eprojectsinventory[]
 }
 
 model eshopinventory {
@@ -157,12 +166,39 @@ model eshopinventory {
   units        String
 }
 
+model eprojectsinventory {
+  inventory_id Int     @id @default(autoincrement())
+  project      project @relation(fields: [project_id], references: [project_id])
+  project_id   Int
+  quantity     Float
+  units        String
+}
+
+model eprojectrestockrecord {
+  record_id        Int      @id @default(autoincrement())
+  items             String
+  source           String
+  notes            String?
+  transaction_date DateTime
+  authorized_by    String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+}
+
+model eprojecttakeoutrecord {
+  record_id        Int      @id @default(autoincrement())
+  items            String
+  transaction_date DateTime
+  destination      String
+  authorized_by    String
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+}
+
 model eshoprestockrecord {
   record_id        Int      @id @default(autoincrement())
-  product          product  @relation(fields: [product_id], references: [product_id])
-  product_id       Int
-  quantity         Float
-  units            String
+  items            String
   source           String
   notes            String?
   transaction_date DateTime
@@ -173,11 +209,8 @@ model eshoprestockrecord {
 
 model eshopStocktakeoutrecord {
   record_id        Int      @id @default(autoincrement())
-  product          product  @relation(fields: [product_id], references: [product_id])
-  product_id       Int
+  items            String
   transaction_date DateTime
-  quantity         Float
-  units            String
   destination      String
   authorized_by    String
   notes            String?
@@ -213,7 +246,7 @@ model saffronuser {
 }
 
 model saffronsale {
-  sale_id    Int         @id @default(autoincrement())
+  sale_id     Int         @id @default(autoincrement())
   saffronuser saffronuser @relation(fields: [user_id], references: [user_id])
   user_id     Int
   amount_sold Int

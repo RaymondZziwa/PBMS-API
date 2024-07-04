@@ -19,6 +19,7 @@ export class UsersController {
   //admin to create user
   @Post('/create-user')
   async createUser(@Req() req: Request) {
+    //return this.natsClient.send({ cmd: 'CREATE_USER' }, req.body);
     const token = req['token'];
     const role = req['role'];
     const isValid$ = this.natsClient.send<boolean>(

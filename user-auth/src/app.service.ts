@@ -98,7 +98,7 @@ export class AuthMicroserviceService {
         }
         return {
           statusCode: 401,
-          message: 'Invalid credentials. Wrong email or password.',
+          message: 'Invalid credentials. Wrong password.',
         };
       }
       return {
@@ -160,8 +160,8 @@ export class AuthMicroserviceService {
           data.email,
         );
         return {
-          statusCode: 404,
-          message: `An access code has been sent to your registered email address (${data.email}).`,
+          statusCode: 200,
+          message: `An access key has been sent to your registered email address (${data.email}).`,
         };
       }
       return {
@@ -227,6 +227,12 @@ export class AuthMicroserviceService {
             'Internal server error. Please contact system support for assistance',
         };
       }
+    } else {
+      return {
+        statusCode: 403,
+        message:
+          'The access key you have provided has either expired or is invalid.',
+      };
     }
   }
 
