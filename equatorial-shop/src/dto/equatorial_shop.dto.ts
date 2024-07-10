@@ -324,16 +324,8 @@ export class genericEditDto {
 
 export class saveProductInventoryRestockDto {
   @IsNotEmpty()
-  @IsNumber()
-  product_id;
-
-  @IsNotEmpty()
   @IsString()
-  quantity;
-
-  @IsNotEmpty()
-  @IsString()
-  units;
+  items: string;
 
   @IsNotEmpty()
   @IsString()
@@ -354,16 +346,8 @@ export class saveProductInventoryRestockDto {
 
 export class saveProductInventoryDepleteDto {
   @IsNotEmpty()
-  @IsNumber()
-  product_id;
-
-  @IsNotEmpty()
   @IsString()
-  quantity;
-
-  @IsNotEmpty()
-  @IsString()
-  units;
+  items: string;
 
   @IsNotEmpty()
   @IsString()
@@ -384,16 +368,8 @@ export class saveProductInventoryDepleteDto {
 
 export class saveProjectInventoryRestockDto {
   @IsNotEmpty()
-  @IsNumber()
-  project_id;
-
-  @IsNotEmpty()
   @IsString()
-  quantity;
-
-  @IsNotEmpty()
-  @IsString()
-  units;
+  items: string;
 
   @IsNotEmpty()
   @IsString()
@@ -414,16 +390,8 @@ export class saveProjectInventoryRestockDto {
 
 export class saveProjectInventoryDepleteDto {
   @IsNotEmpty()
-  @IsNumber()
-  project_id;
-
-  @IsNotEmpty()
   @IsString()
-  quantity;
-
-  @IsNotEmpty()
-  @IsString()
-  units;
+  items: string;
 
   @IsNotEmpty()
   @IsString()

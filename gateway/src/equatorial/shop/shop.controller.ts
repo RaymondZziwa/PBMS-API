@@ -48,7 +48,7 @@ export class equatorialShopController {
 
   @Post('/edit-project')
   editProject(@Req() req: Request) {
-    return this.natsClient.send({ cmd: 'GEDIT_PROJECT' }, req.body);
+    return this.natsClient.send({ cmd: 'EDIT_PROJECT' }, req.body);
   }
 
   @Post('/edit-product')
@@ -242,28 +242,28 @@ export class equatorialShopController {
   }
 
   //pos
-  @Post('/save-sale')
+  @Post('/save-esale')
   saveSale(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'SAVE_SALE' }, req.body);
   }
 
-  @Post('/delete-sale')
+  @Post('/delete-esale')
   deleteSale(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'DELETE_SALE' }, req.body);
   }
 
-  @Get('/get-sale')
+  @Get('/get-esale')
   retrieveSale(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'RETRIEVE_SALE' }, req.body);
   }
 
-  @Get('/get-all-sales')
+  @Get('/get-all-esales')
   getAllSales(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_ALL_SALES' }, req.body);
   }
 
   //massage
-  @Post('/decline-entry')
+  @Post('/decline-income-entry')
   declineEntry(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'DECLINE_ENTRY' }, req.body);
   }
@@ -278,7 +278,7 @@ export class equatorialShopController {
     return this.natsClient.send({ cmd: 'DELETE_ENTRY' }, req.body);
   }
 
-  @Get('/get-all-massage-income-entries')
+  @Get('/c')
   getAllIncomeEntries(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_INCOME_ENTRIES' }, req.body);
   }
@@ -309,7 +309,7 @@ export class equatorialShopController {
     return this.natsClient.send({ cmd: 'GET_SUPPLIER_SUPPLIES' }, req.body);
   }
 
-  @Post('/get-all-suppliers')
+  @Get('/get-all-suppliers')
   getAllSuppliers(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_ALL_SUPPLIERS' }, req.body);
   }
@@ -346,6 +346,7 @@ export class equatorialShopController {
   }
 
   //saffron
+  //--save saffron user, edit and delete
   @Post('/save-saffron-sale')
   saveSaffronSale(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'SAVE_SAFFRON_SALE' }, req.body);
