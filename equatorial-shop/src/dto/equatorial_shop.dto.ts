@@ -298,6 +298,10 @@ export class registerProductDto {
   @IsString()
   @IsNotEmpty()
   price;
+
+  @IsNumber()
+  @IsNotEmpty()
+  category_id;
 }
 
 export class registerProjectDto {
@@ -314,6 +318,9 @@ export class genericEditDto {
   @IsNumber()
   @IsNotEmpty()
   id;
+
+  @IsNumber()
+  category_id: number;
 
   @IsString()
   name;
@@ -332,7 +339,6 @@ export class saveProductInventoryRestockDto {
   source;
 
   @IsString()
-  @IsNotEmpty()
   notes;
 
   @IsDateString()
@@ -502,6 +508,9 @@ export class genericAddDto {
   @IsNotEmpty()
   @IsString()
   name: string;
+
+  @IsString()
+  description?: string;
 }
 
 export class reportDto {

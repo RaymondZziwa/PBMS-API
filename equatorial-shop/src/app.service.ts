@@ -22,6 +22,7 @@ import {
   viewExpenseDto,
 } from './dto/equatorial_shop.dto';
 import { PrismaService } from './prisma/prisma.service';
+import { IProduct } from './interfaces/product';
 
 @Injectable()
 export class AppService {
@@ -32,7 +33,7 @@ export class AppService {
     try {
       const ISBN_code = Math.floor(Math.random() * 10000000000000);
       await this.prismaService
-        .$queryRaw`INSERT INTO product (name, price, barcode) VALUES (${dto.name}, ${dto.price}, ${ISBN_code})`;
+        .$queryRaw`INSERT INTO product (name, price, barcode, category_id) VALUES (${dto.name}, ${dto.price}, ${ISBN_code}, ${dto.category_id})`;
 
       const productsList = await this.getAllProducts();
       return {
@@ -51,12 +52,18 @@ export class AppService {
 
   async getAllProducts() {
     try {
-      const productsList = await this.prismaService
+      const productsList: IProduct[] = await this.prismaService
         .$queryRaw`SELECT * FROM product`;
+
+      const sortedProducts = productsList.sort((a: IProduct, b: IProduct) => {
+        const prodBDate = new Date(b.createdAt).getTime();
+        const prodADate = new Date(a.createdAt).getTime();
+        return prodBDate - prodADate;
+      });
       return {
         statusCode: 200,
         message: 'Product list has been fetched successfully',
-        data: productsList,
+        data: sortedProducts,
       };
     } catch (error) {
       return {
@@ -131,11 +138,18 @@ export class AppService {
       const updatedPromises = items.map(
         async (item: {
           product_id: number;
-          quantity: number;
-          units: string;
+          quantity: string;
+          units: number;
         }) => {
-          await this.prismaService
-            .$executeRaw`UPDATE eshopinventory SET quantity = quantity + ${item.quantity} WHERE product_id = ${item.product_id}`;
+          const product: [] = await this.prismaService
+            .$queryRaw`SELECT * FROM eshopinventory WHERE product_id = ${item.product_id} AND units = ${item.units}`;
+          if (product.length === 0) {
+            await this.prismaService
+              .$executeRaw`INSERT INTO eshopinventory (product_id, quantity, units) VALUES (${item.product_id}, ${item.quantity}, ${item.units})`;
+          } else {
+            await this.prismaService
+              .$executeRaw`UPDATE eshopinventory SET quantity = quantity + ${parseInt(item.quantity)} WHERE product_id = ${item.product_id} AND units = ${item.units}`;
+          }
         },
       );
 
@@ -166,9 +180,13 @@ export class AppService {
       const items = JSON.parse(dto.items);
 
       const promises = items.map(
-        async (item: { product_id: number; quantity: number }) => {
+        async (item: {
+          product_id: number;
+          quantity: number;
+          units: number;
+        }) => {
           const product = await this.prismaService
-            .$queryRaw`SELECT quantity FROM eshopinventory WHERE product_id = ${item.product_id}`;
+            .$queryRaw`SELECT quantity FROM eshopinventory WHERE product_id = ${item.product_id} AND units = ${item.units}`;
           const qtyInStock = product[0]?.quantity || 0;
           if (qtyInStock >= item.quantity) {
             return Promise.resolve();
@@ -283,12 +301,14 @@ export class AppService {
   async deleteProduct(dto: genericFindDto) {
     try {
       await this.prismaService
-        .$queryRaw`DELETE * FROM product WHERE product_id = ${dto.id}`;
+        .$queryRaw`DELETE FROM product WHERE product_id = ${dto.id}`;
+
+      const updatedProducts = await this.getAllProducts();
 
       return {
         statusCode: 200,
         message: 'Product has been deleted successfully',
-        data: null,
+        data: updatedProducts.data,
       };
     } catch (error) {
       return {
@@ -1319,15 +1339,16 @@ export class AppService {
   async addProductCategory(dto: genericAddDto) {
     try {
       await this.prismaService
-        .$executeRaw`INSERT INTO productcategory (id, name) VALUES (${dto.name})`;
+        .$executeRaw`INSERT INTO productcategories (name, description) VALUES (${dto.name}, ${dto.description})`;
 
-      const units = await this.getUnits();
+      const updatedCategories = await this.getProductCategories();
       return {
         statusCode: 200,
         message: 'Product category added successfully',
-        data: units,
+        data: updatedCategories.data,
       };
     } catch (error) {
+      console.log(error);
       return {
         statusCode: 500,
         message: 'Error while adding product category',
@@ -1357,11 +1378,11 @@ export class AppService {
     try {
       await this.prismaService
         .$executeRaw`DELETE FROM productcategories WHERE id = ${dto.id}`;
-      const units = await this.getProductCategories();
+      const updatedCategories = await this.getProductCategories();
       return {
         statusCode: 200,
         message: 'Product category deleted successfully',
-        data: units,
+        data: updatedCategories.data,
       };
     } catch (error) {
       return {
@@ -1375,13 +1396,13 @@ export class AppService {
   async addMUnit(dto: genericAddDto) {
     try {
       await this.prismaService
-        .$executeRaw`INSERT INTO munits (unit_id, name) VALUES (${dto.name})`;
+        .$executeRaw`INSERT INTO munits (name, description) VALUES (${dto.name}, ${dto.description})`;
 
       const units = await this.getUnits();
       return {
         statusCode: 200,
         message: 'Measurement unit added successfully',
-        data: units,
+        data: units.data,
       };
     } catch (error) {
       return {
@@ -1417,7 +1438,7 @@ export class AppService {
       return {
         statusCode: 200,
         message: 'Measurement unit deleted successfully',
-        data: units,
+        data: units.data,
       };
     } catch (error) {
       return {

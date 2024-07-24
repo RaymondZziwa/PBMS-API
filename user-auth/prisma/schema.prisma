@@ -136,16 +136,25 @@ model supplyrecords {
   updatedAt    DateTime @default(now()) @updatedAt
 }
 
+model productcategories {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  product     product[]
+}
+
 model product {
   product_id                    Int                       @id @default(autoincrement())
+  productcategories             productcategories         @relation(fields: [category_id], references: [id])
+  category_id                   Int   
   name                          String
   price                         Float
   barcode                       String
   createdAt                     DateTime                  @default(now())
   updatedAt                     DateTime                  @default(now()) @updatedAt
   eshopinventory                eshopinventory[]
-  externalreceipt               externalreceipt?          @relation(fields: [externalreceiptReceipt_number], references: [receipt_number])
-  externalreceiptReceipt_number String?
 }
 
 model project {
@@ -158,12 +167,20 @@ model project {
   eprojectsinventory    eprojectsinventory[]
 }
 
+model munits {
+  unit_id     Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+}
+
 model eshopinventory {
   inventory_id Int     @id @default(autoincrement())
   product      product @relation(fields: [product_id], references: [product_id])
   product_id   Int
   quantity     Float
-  units        String
+  units        Int
 }
 
 model eprojectsinventory {
@@ -222,7 +239,7 @@ model externalreceipt {
   receipt_number String    @id @unique
   client         client?   @relation(fields: [client_id], references: [client_id])
   client_id      Int
-  items          product[]
+  items          String
   total_price    Float
   balance        Float
   payment_method String
@@ -303,16 +320,9 @@ model munits {
   name        String
   description String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now()) @updatedAt
 }
 
-model productcategories {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
 
 model branch {
   id          Int          @id @default(autoincrement())

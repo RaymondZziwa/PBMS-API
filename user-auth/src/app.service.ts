@@ -93,6 +93,7 @@ export class AuthMicroserviceService {
               'Hoooray!! We found you. Please wait a moment as we grant you access.',
             tokens: authTokens,
             last_name: last_name,
+            //email: user[0].email,
             userInfo: otherUserData,
           };
         }
