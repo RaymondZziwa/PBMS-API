@@ -77,14 +77,15 @@ model client {
   phone           String            @unique
   address         String?
   externalreceipt externalreceipt[]
-  eshopsales      eshopsales[]
-  eprojectssales  eprojectssales[]
-  mshopsales      mshopsales[]
+  equatorialshopsales      equatorialshopsales[]
+  equatorialprojectssales  equatorialprojectssales[]
+  masanafuprojectssales  masanafuprojectssales[]
+  masanafushopsales      masanafushopsales[]
   registeredAt    DateTime          @default(now())
   updatedAt       DateTime          @default(now()) @updatedAt
 }
 
-model eshopsales {
+model equatorialshopsales {
   sale_id   Int      @id @default(autoincrement())
   client    client   @relation(fields: [client_id], references: [client_id])
   client_id Int      @unique
@@ -94,7 +95,7 @@ model eshopsales {
   updatedAt DateTime @default(now()) @updatedAt
 }
 
-model eprojectssales {
+model equatorialprojectssales {
   sale_id   Int      @id @default(autoincrement())
   client    client   @relation(fields: [client_id], references: [client_id])
   client_id Int      @unique
@@ -104,7 +105,17 @@ model eprojectssales {
   updatedAt DateTime @default(now()) @updatedAt
 }
 
-model mshopsales {
+model masanafuprojectssales {
+  sale_id   Int      @id @default(autoincrement())
+  client    client   @relation(fields: [client_id], references: [client_id])
+  client_id Int      @unique
+  items     String
+  totalCost String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model masanafushopsales {
   sale_id      Int      @id @default(autoincrement())
   client       client   @relation(fields: [client_id], references: [client_id])
   client_id    Int      @unique
@@ -154,7 +165,8 @@ model product {
   barcode                       String
   createdAt                     DateTime                  @default(now())
   updatedAt                     DateTime                  @default(now()) @updatedAt
-  eshopinventory                eshopinventory[]
+  equatorialshopinventory                equatorialshopinventory[]
+  masanafushopinventory                masanafushopinventory[]
 }
 
 model project {
@@ -164,7 +176,8 @@ model project {
   barcode               String
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @default(now()) @updatedAt
-  eprojectsinventory    eprojectsinventory[]
+  equatorialprojectsinventory    equatorialprojectsinventory[]
+  masanafuprojectsinventory    masanafuprojectsinventory[]
 }
 
 model munits {
@@ -175,7 +188,7 @@ model munits {
   updatedAt   DateTime @default(now()) @updatedAt
 }
 
-model eshopinventory {
+model equatorialshopinventory {
   inventory_id Int     @id @default(autoincrement())
   product      product @relation(fields: [product_id], references: [product_id])
   product_id   Int
@@ -183,7 +196,7 @@ model eshopinventory {
   units        Int
 }
 
-model eprojectsinventory {
+model equatorialprojectsinventory {
   inventory_id Int     @id @default(autoincrement())
   project      project @relation(fields: [project_id], references: [project_id])
   project_id   Int
@@ -191,9 +204,11 @@ model eprojectsinventory {
   units        String
 }
 
-model eprojectrestockrecord {
+model equatorialprojectrestockrecord {
   record_id        Int      @id @default(autoincrement())
   items             String
+  quantity          String
+  units             Int
   source           String
   notes            String?
   transaction_date DateTime
@@ -202,9 +217,11 @@ model eprojectrestockrecord {
   updatedAt        DateTime @default(now()) @updatedAt
 }
 
-model eprojecttakeoutrecord {
+model equatorialprojecttakeoutrecord {
   record_id        Int      @id @default(autoincrement())
   items            String
+  quantity          String
+  units             Int
   transaction_date DateTime
   destination      String
   authorized_by    String
@@ -213,9 +230,11 @@ model eprojecttakeoutrecord {
   updatedAt        DateTime @default(now()) @updatedAt
 }
 
-model eshoprestockrecord {
+model equatorialshoprestockrecord {
   record_id        Int      @id @default(autoincrement())
   items            String
+  quantity          String
+  units             Int
   source           String
   notes            String?
   transaction_date DateTime
@@ -224,9 +243,11 @@ model eshoprestockrecord {
   updatedAt        DateTime @default(now()) @updatedAt
 }
 
-model eshopStocktakeoutrecord {
+model equatorialshopStocktakeoutrecord {
   record_id        Int      @id @default(autoincrement())
   items            String
+  quantity          String
+  units             Int
   transaction_date DateTime
   destination      String
   authorized_by    String
@@ -284,7 +305,7 @@ model massageincome {
   updatedAt       DateTime @updatedAt
 }
 
-model eshopexpense {
+model equatorialshopexpense {
   expense_id     Int      @id @default(autoincrement())
   date           DateTime
   category       String
@@ -313,14 +334,6 @@ model cheque {
   status            String
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-}
-
-model munits {
-  unit_id     Int      @id @default(autoincrement())
-  name        String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
 }
 
 
@@ -352,4 +365,79 @@ model role {
   description String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+}
+
+model masanafushopexpense {
+  expense_id     Int      @id @default(autoincrement())
+  date           DateTime
+  category       String
+  name           String
+  description    String
+  cost           Float
+  balance        Float
+  payment_method String
+  payment_status String
+  receipt_image  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+}
+
+model masanafushopinventory {
+  inventory_id Int     @id @default(autoincrement())
+  product      product @relation(fields: [product_id], references: [product_id])
+  product_id   Int
+  quantity     Float
+  units        Int
+}
+
+model masanafuprojectsinventory {
+  inventory_id Int     @id @default(autoincrement())
+  project      project @relation(fields: [project_id], references: [project_id])
+  project_id   Int
+  quantity     Float
+  units        String
+}
+
+model masanafuprojectrestockrecord {
+  record_id        Int      @id @default(autoincrement())
+  items             String
+  source           String
+  notes            String?
+  transaction_date DateTime
+  authorized_by    String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+}
+
+model masanafuprojecttakeoutrecord {
+  record_id        Int      @id @default(autoincrement())
+  items            String
+  transaction_date DateTime
+  destination      String
+  authorized_by    String
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+}
+
+model masanafushoprestockrecord {
+  record_id        Int      @id @default(autoincrement())
+  items            String
+  source           String
+  notes            String?
+  transaction_date DateTime
+  authorized_by    String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+}
+
+model masanafushopStocktakeoutrecord {
+  record_id        Int      @id @default(autoincrement())
+  items            String
+  transaction_date DateTime
+  destination      String
+  authorized_by    String
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
 }

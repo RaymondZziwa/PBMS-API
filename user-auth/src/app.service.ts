@@ -289,7 +289,6 @@ export class AuthMicroserviceService {
     try {
       const users: [] = await this.prismaService
         .$queryRaw`SELECT user.first_name, user.last_name, user.branch, user.department, user.role FROM user`;
-      // .$queryRaw`SELECT user.first_name, user.last_name, user.branch, user.department, user.role, userSessions.last_time_online FROM user JOIN userSessions ON user.user_id = userSessions.user_id;`;
 
       if (users.length > 0) {
         return {

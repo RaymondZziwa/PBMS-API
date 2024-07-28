@@ -165,6 +165,10 @@ export class changeMassageIncomeStatusDto {
 export class saveSaleDto {
   @IsString()
   @IsNotEmpty()
+  branch: string;
+
+  @IsString()
+  @IsNotEmpty()
   receipt_number: string;
 
   @IsNumber()
@@ -217,6 +221,10 @@ export class fetchClientPurchasesDto {
 }
 
 export class saveExpenseDto {
+  @IsString()
+  @IsNotEmpty()
+  branch: string;
+
   @IsDateString()
   @IsNotEmpty()
   date: Date;
@@ -255,12 +263,20 @@ export class saveExpenseDto {
 }
 
 export class viewExpenseDto {
+  @IsString()
+  @IsNotEmpty()
+  branch: string;
+
   @IsNumber()
   @IsNotEmpty()
   expense_id: number;
 }
 
 export class updateExpenseDto {
+  @IsString()
+  @IsNotEmpty()
+  branch: string;
+
   @IsNumber()
   @IsNotEmpty()
   expense_id: number;
@@ -329,7 +345,17 @@ export class genericEditDto {
   price;
 }
 
+export class getBranchDataDto {
+  @IsNotEmpty()
+  @IsString()
+  branch: string;
+}
+
 export class saveProductInventoryRestockDto {
+  @IsNotEmpty()
+  @IsString()
+  branch: string;
+
   @IsNotEmpty()
   @IsString()
   items: string;
@@ -351,6 +377,10 @@ export class saveProductInventoryRestockDto {
 }
 
 export class saveProductInventoryDepleteDto {
+  @IsNotEmpty()
+  @IsString()
+  branch: string;
+
   @IsNotEmpty()
   @IsString()
   items: string;
@@ -375,6 +405,10 @@ export class saveProductInventoryDepleteDto {
 export class saveProjectInventoryRestockDto {
   @IsNotEmpty()
   @IsString()
+  branch: string;
+
+  @IsNotEmpty()
+  @IsString()
   items: string;
 
   @IsNotEmpty()
@@ -395,6 +429,10 @@ export class saveProjectInventoryRestockDto {
 }
 
 export class saveProjectInventoryDepleteDto {
+  @IsNotEmpty()
+  @IsString()
+  branch: string;
+
   @IsNotEmpty()
   @IsString()
   items: string;
@@ -420,6 +458,9 @@ export class genericFindDto {
   @IsNotEmpty()
   @IsNumber()
   id;
+
+  @IsString()
+  branch: string;
 }
 
 export class saveClientDto {
@@ -514,6 +555,10 @@ export class genericAddDto {
 }
 
 export class reportDto {
+  @IsNotEmpty()
+  @IsString()
+  branch: string;
+
   @IsDateString()
   date: string;
 
