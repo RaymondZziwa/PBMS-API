@@ -21,11 +21,11 @@ export class JwtTokenService {
     try {
       const accessToken = this.jwtService.sign(userData, {
         expiresIn: '1d',
-        secret: env.secret_key,
+        secret: env.SECRET_KEY,
       });
       const refreshToken = this.jwtService.sign(userData, {
         expiresIn: '2d',
-        secret: env.secret_key,
+        secret: env.SECRET_KEY,
       });
       return {
         statusCode: 200,
@@ -49,7 +49,7 @@ export class JwtTokenService {
   async verifyTokens(token: string) {
     try {
       const isTokenValid = await this.jwtService.verify(token, {
-        secret: env.secret_key,
+        secret: env.SECRET_KEY,
       });
       if (isTokenValid) {
         return true;

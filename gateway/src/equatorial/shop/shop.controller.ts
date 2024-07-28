@@ -9,7 +9,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { BearerTokenExtractor } from 'src/middleware/tokenExtractor.middleware';
 
-@Controller('api/equatorial/')
+@Controller('api/v1/')
 @UseInterceptors(BearerTokenExtractor)
 export class equatorialShopController {
   constructor(

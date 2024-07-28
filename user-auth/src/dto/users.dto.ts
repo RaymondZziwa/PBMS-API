@@ -2,12 +2,12 @@ import {
   IsString,
   IsNotEmpty,
   IsEmail,
-  IsOptional,
-  IsDateString,
-  IsNumber,
-  Matches,
-  MaxLength,
   MinLength,
+  MaxLength,
+  Matches,
+  IsDateString,
+  IsOptional,
+  IsNumber,
 } from 'class-validator';
 
 export class addressInfoDto {

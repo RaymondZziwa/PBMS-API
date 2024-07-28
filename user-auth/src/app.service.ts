@@ -93,6 +93,7 @@ export class AuthMicroserviceService {
               'Hoooray!! We found you. Please wait a moment as we grant you access.',
             tokens: authTokens,
             last_name: last_name,
+            //email: user[0].email,
             userInfo: otherUserData,
           };
         }
@@ -288,7 +289,6 @@ export class AuthMicroserviceService {
     try {
       const users: [] = await this.prismaService
         .$queryRaw`SELECT user.first_name, user.last_name, user.branch, user.department, user.role FROM user`;
-      // .$queryRaw`SELECT user.first_name, user.last_name, user.branch, user.department, user.role, userSessions.last_time_online FROM user JOIN userSessions ON user.user_id = userSessions.user_id;`;
 
       if (users.length > 0) {
         return {

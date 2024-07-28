@@ -6,6 +6,7 @@ import {
   genericAddDto,
   genericEditDto,
   genericFindDto,
+  getBranchDataDto,
   registerProductDto,
   registerProjectDto,
   reportDto,
@@ -22,6 +23,8 @@ import {
   viewExpenseDto,
 } from './dto/equatorial_shop.dto';
 import { PrismaService } from './prisma/prisma.service';
+import { IProduct } from './interfaces/product';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AppService {
@@ -32,7 +35,7 @@ export class AppService {
     try {
       const ISBN_code = Math.floor(Math.random() * 10000000000000);
       await this.prismaService
-        .$queryRaw`INSERT INTO product (name, price, barcode) VALUES (${dto.name}, ${dto.price}, ${ISBN_code})`;
+        .$queryRaw`INSERT INTO product (name, price, barcode, category_id) VALUES (${dto.name}, ${dto.price}, ${ISBN_code}, ${dto.category_id})`;
 
       const productsList = await this.getAllProducts();
       return {
@@ -51,12 +54,18 @@ export class AppService {
 
   async getAllProducts() {
     try {
-      const productsList = await this.prismaService
+      const productsList: IProduct[] = await this.prismaService
         .$queryRaw`SELECT * FROM product`;
+
+      const sortedProducts = productsList.sort((a: IProduct, b: IProduct) => {
+        const prodBDate = new Date(b.createdAt).getTime();
+        const prodADate = new Date(a.createdAt).getTime();
+        return prodBDate - prodADate;
+      });
       return {
         statusCode: 200,
         message: 'Product list has been fetched successfully',
-        data: productsList,
+        data: sortedProducts,
       };
     } catch (error) {
       return {
@@ -108,7 +117,7 @@ export class AppService {
   async getProduct(id: number) {
     try {
       const productData = await this.prismaService
-        .$queryRaw`SELECT * FROM eshopinventory JOIN product ON eshopinventory.product_id = product.product_id WHERE eshopinventory.product_id = ${id}`;
+        .$queryRaw`SELECT * FROM  product WHERE product_id = ${id}`;
 
       return {
         statusCode: 200,
@@ -130,21 +139,35 @@ export class AppService {
 
       const updatedPromises = items.map(
         async (item: {
-          product_id: number;
-          quantity: number;
-          units: string;
+          productId: number;
+          quantity: string;
+          units: number;
         }) => {
-          await this.prismaService
-            .$executeRaw`UPDATE eshopinventory SET quantity = quantity + ${item.quantity} WHERE product_id = ${item.product_id}`;
+          const tableName = `${dto.branch}shopinventory`;
+          const recordsTableName = `${dto.branch}shoprestockrecord`;
+
+          const product: [] = await this.prismaService
+            .$queryRaw`SELECT * FROM ${Prisma.raw(tableName)}  WHERE product_id = ${item.productId} AND units = ${item.units}`;
+
+          if (product.length === 0) {
+            await this.prismaService
+              .$executeRaw`INSERT INTO ${Prisma.raw(tableName)} (product_id, quantity, units) VALUES (${item.productId}, ${item.quantity}, ${item.units})`;
+            await this.prismaService
+              .$executeRaw`INSERT INTO ${Prisma.raw(recordsTableName)} (items, quantity, units, source, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.source}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
+          } else {
+            await this.prismaService
+              .$executeRaw`UPDATE ${Prisma.raw(tableName)} SET quantity = quantity + ${parseInt(item.quantity)} WHERE product_id = ${item.productId} AND units = ${item.units}`;
+            await this.prismaService
+              .$executeRaw`INSERT INTO ${Prisma.raw(recordsTableName)} (items, quantity, units, source, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.source}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
+          }
         },
       );
 
       await Promise.all(updatedPromises);
 
-      await this.prismaService
-        .$executeRaw`INSERT INTO eshoprestockrecord (items, source, notes, transaction_date, authorized_by) VALUES (${dto.items}, ${dto.source}, ${dto.notes}, ${dto.transaction_date}, ${dto.authorized_by})`;
-
-      const updatedRecords = await this.getProductRestockRecords();
+      const updatedRecords = await this.getProductRestockRecords({
+        branch: dto.branch,
+      });
 
       return {
         statusCode: 200,
@@ -152,6 +175,7 @@ export class AppService {
         data: updatedRecords,
       };
     } catch (error) {
+      console.log(error);
       return {
         statusCode: 500,
         message: 'Error while restocking product',
@@ -166,9 +190,13 @@ export class AppService {
       const items = JSON.parse(dto.items);
 
       const promises = items.map(
-        async (item: { product_id: number; quantity: number }) => {
+        async (item: {
+          product_id: number;
+          quantity: number;
+          units: number;
+        }) => {
           const product = await this.prismaService
-            .$queryRaw`SELECT quantity FROM eshopinventory WHERE product_id = ${item.product_id}`;
+            .$queryRaw`SELECT quantity FROM ${dto.branch}shopinventory WHERE product_id = ${item.product_id} AND units = ${item.units}`;
           const qtyInStock = product[0]?.quantity || 0;
           if (qtyInStock >= item.quantity) {
             return Promise.resolve();
@@ -197,7 +225,7 @@ export class AppService {
       const updatePromises = items.map(
         async (item: { product_id: number; quantity: number }) => {
           await this.prismaService
-            .$executeRaw`UPDATE eshopinventory SET quantity = quantity - ${item.quantity} WHERE product_id = ${item.product_id}`;
+            .$executeRaw`UPDATE ${dto.branch}shopinventory SET quantity = quantity - ${item.quantity} WHERE product_id = ${item.product_id}`;
         },
       );
 
@@ -205,9 +233,11 @@ export class AppService {
       await Promise.all(updatePromises);
 
       await this.prismaService
-        .$queryRaw`INSERT INTO eshopStocktakeoutrecord (product_id, quantity, units, destination, notes, transaction_date, authorized_by) VALUES (${dto.items}, ${dto.destination}, ${dto.notes}, ${dto.transaction_date}, ${dto.authorized_by})`;
+        .$queryRaw`INSERT INTO ${dto.branch}shopStocktakeoutrecord (product_id, quantity, units, destination, notes, transaction_date, authorized_by) VALUES (${dto.items}, ${dto.destination}, ${dto.notes}, ${dto.transaction_date}, ${dto.authorized_by})`;
 
-      const updatedRecords = await this.getProductDepleteRecords();
+      const updatedRecords = await this.getProductDepleteRecords({
+        branch: dto.branch,
+      });
 
       return {
         statusCode: 200,
@@ -223,10 +253,10 @@ export class AppService {
     }
   }
 
-  async getEquatorialShopStock() {
+  async getShopStock(dto: getBranchDataDto) {
     try {
       const stockData = await this.prismaService
-        .$executeRaw`SELECT * FROM eshopinventory JOIN product ON eshopinventory.product_id = product.product_id`;
+        .$executeRaw`SELECT * FROM ${dto.branch}shopinventory JOIN product ON ${dto.branch}shopinventory.product_id = product.product_id`;
 
       return {
         statusCode: 200,
@@ -242,10 +272,15 @@ export class AppService {
     }
   }
 
-  async getProductRestockRecords() {
+  async getProductRestockRecords(dto: getBranchDataDto) {
     try {
-      const restockRecords = await this.prismaService
-        .$queryRaw`SELECT * FROM eshoprestockrecord JOIN product ON eshoprestockrecord.product_id = product.product_id`;
+      console.log(dto);
+      const tableName = `${dto.branch}shoprestockrecord`;
+      const restockRecords = await this.prismaService.$queryRaw`
+    SELECT * 
+    FROM ${Prisma.raw(tableName)} 
+    JOIN product ON ${Prisma.raw(tableName)}.product_id = product.product_id 
+    JOIN munits ON ${Prisma.raw(tableName)}.units = munits.unit_id`;
 
       return {
         statusCode: 200,
@@ -253,6 +288,7 @@ export class AppService {
         data: restockRecords,
       };
     } catch (error) {
+      console.log(error);
       return {
         statusCode: 500,
         message: 'Error while fetching product restock records',
@@ -261,10 +297,10 @@ export class AppService {
     }
   }
 
-  async getProductDepleteRecords() {
+  async getProductDepleteRecords(dto: getBranchDataDto) {
     try {
       const depleteRecords = await this.prismaService
-        .$queryRaw`SELECT * FROM eshopStocktakeoutrecord JOIN product ON eshopStocktakeoutrecord.product_id = product.product_id`;
+        .$queryRaw`SELECT * FROM ${dto.branch}shopStocktakeoutrecord JOIN product ON ${dto.branch}shopStocktakeoutrecord.product_id = product.product_id`;
 
       return {
         statusCode: 200,
@@ -283,12 +319,14 @@ export class AppService {
   async deleteProduct(dto: genericFindDto) {
     try {
       await this.prismaService
-        .$queryRaw`DELETE * FROM product WHERE product_id = ${dto.id}`;
+        .$queryRaw`DELETE FROM product WHERE product_id = ${dto.id}`;
+
+      const updatedProducts = await this.getAllProducts();
 
       return {
         statusCode: 200,
         message: 'Product has been deleted successfully',
-        data: null,
+        data: updatedProducts.data,
       };
     } catch (error) {
       return {
@@ -298,10 +336,11 @@ export class AppService {
       };
     }
   }
+
   async deleteProductRestockRecord(dto: genericFindDto) {
     try {
       await this.prismaService
-        .$queryRaw`DELETE * FROM eshoprestockrecord WHERE record_id = ${dto.id}`;
+        .$queryRaw`DELETE * FROM ${dto.branch}shoprestockrecord WHERE record_id = ${dto.id}`;
 
       return {
         statusCode: 200,
@@ -319,7 +358,7 @@ export class AppService {
   async deleteProductDepletionRecord(dto: genericFindDto) {
     try {
       await this.prismaService
-        .$queryRaw`DELETE * FROM eshoprestockrecord WHERE record_id = ${dto.id}`;
+        .$queryRaw`DELETE * FROM ${dto.branch}shoprestockrecord WHERE record_id = ${dto.id}`;
 
       return {
         statusCode: 200,
@@ -398,7 +437,7 @@ export class AppService {
   async getProject(dto: genericFindDto) {
     try {
       const projectData = await this.prismaService
-        .$executeRaw`SELECT * FROM eprojectsinventory JOIN product ON eprojectsinventory.project_id = project.project_id WHERE project.project_id = ${dto.id}`;
+        .$executeRaw`SELECT * FROM ${dto.branch}projectsinventory WHERE project_id = ${dto.id}`;
 
       return {
         statusCode: 200,
@@ -444,14 +483,14 @@ export class AppService {
           units: string;
         }) => {
           const project: [] = await this.prismaService
-            .$queryRaw`SELECT * FROM eprojectsinventory WHERE project_id = ${item.project_id}`;
+            .$queryRaw`SELECT * FROM ${dto.branch}projectsinventory WHERE project_id = ${item.project_id}`;
 
           if (project.length > 0) {
             await this.prismaService
-              .$executeRaw`UPDATE eprojectsinventory SET quantity = quantity + ${item.quantity} WHERE project_id = ${item.project_id}`;
+              .$executeRaw`UPDATE ${dto.branch}projectsinventory SET quantity = quantity + ${item.quantity} WHERE project_id = ${item.project_id}`;
           } else {
             await this.prismaService
-              .$executeRaw`INSERT INTO eprojectsinventory (project_id, quantity, units) VALUES
+              .$executeRaw`INSERT INTO ${dto.branch}projectsinventory (project_id, quantity, units) VALUES
             (${item.project_id}, ${item.quantity}, '${item.units}');`;
           }
         },
@@ -459,7 +498,9 @@ export class AppService {
 
       await Promise.all(updatedPromises);
 
-      const updatedRecords = await this.getProjectRestockRecords();
+      const updatedRecords = await this.getProjectRestockRecords({
+        branch: dto.branch,
+      });
 
       return {
         statusCode: 200,
@@ -486,7 +527,7 @@ export class AppService {
       // Check stock for all items
       for (const item of items) {
         const project = await this.prismaService.$queryRaw`
-          SELECT quantity FROM eprojectsinventory WHERE project_id = ${item.project_id}`;
+          SELECT quantity FROM ${dto.branch}projectsinventory WHERE project_id = ${item.project_id}`;
         const qtyInStock = project[0]?.quantity || 0;
         if (qtyInStock < item.quantity) {
           insufficientItems.push(item.project_id);
@@ -505,12 +546,14 @@ export class AppService {
       const updatePromises = items.map(
         (item) =>
           this.prismaService.$executeRaw`
-          UPDATE eprojectsinventory SET quantity = quantity - ${item.quantity} WHERE project_id = ${item.project_id}`,
+          UPDATE ${dto.branch}projectsinventory SET quantity = quantity - ${item.quantity} WHERE project_id = ${item.project_id}`,
       );
 
       await Promise.all(updatePromises);
 
-      const updatedRecords = await this.getProjectDepleteRecords();
+      const updatedRecords = await this.getProjectDepleteRecords({
+        branch: dto.branch,
+      });
 
       return {
         statusCode: 200,
@@ -526,10 +569,10 @@ export class AppService {
     }
   }
 
-  async getEquatorialProjectStock() {
+  async getProjectStock(dto: getBranchDataDto) {
     try {
       const stockData = await this.prismaService
-        .$executeRaw`SELECT * FROM eprojectsinventory JOIN project ON eprojectsinventory.project_id = project.project_id`;
+        .$executeRaw`SELECT * FROM ${dto.branch}projectsinventory JOIN project ON ${dto.branch}projectsinventory.project_id = project.project_id`;
 
       return {
         statusCode: 200,
@@ -545,10 +588,10 @@ export class AppService {
     }
   }
 
-  async getProjectRestockRecords() {
+  async getProjectRestockRecords(dto: getBranchDataDto) {
     try {
       const restockRecords = await this.prismaService
-        .$executeRaw`SELECT * FROM eshopprojectrestockrecord JOIN product ON eshopprojectrestockrecord.product_id = product.product_id`;
+        .$executeRaw`SELECT * FROM ${dto.branch}shopprojectrestockrecord JOIN product ON ${dto.branch}shopprojectrestockrecord.product_id = product.product_id`;
 
       return {
         statusCode: 200,
@@ -564,10 +607,10 @@ export class AppService {
     }
   }
 
-  async getProjectDepleteRecords() {
+  async getProjectDepleteRecords(dto: getBranchDataDto) {
     try {
       const restockRecords = await this.prismaService
-        .$executeRaw`SELECT * FROM eshopprojecttakeoutrecord JOIN product ON eshopprojecttakeoutrecord.product_id = product.product_id`;
+        .$executeRaw`SELECT * FROM ${dto.branch}shopprojecttakeoutrecord JOIN product ON ${dto.branch}shopprojecttakeoutrecord.product_id = product.product_id`;
       return {
         statusCode: 200,
         message: 'Project deplete records have been fetched',
@@ -603,7 +646,7 @@ export class AppService {
   async deleteProjectRestockRecord(dto: genericFindDto) {
     try {
       await this.prismaService
-        .$queryRaw`DELETE * FROM eshopprojectrestockrecord WHERE record_id = ${dto.id}`;
+        .$queryRaw`DELETE * FROM ${dto.branch}shopprojectrestockrecord WHERE record_id = ${dto.id}`;
 
       return {
         statusCode: 200,
@@ -621,7 +664,7 @@ export class AppService {
   async deleteProjectDepletionRecord(dto: genericFindDto) {
     try {
       await this.prismaService
-        .$queryRaw`DELETE * FROM eshopprojecttakeoutrecord WHERE record_id = ${dto.id}`;
+        .$queryRaw`DELETE * FROM ${dto.branch}shopprojecttakeoutrecord WHERE record_id = ${dto.id}`;
 
       return {
         statusCode: 200,
@@ -640,8 +683,8 @@ export class AppService {
   /*expenditure*/
   async saveExpense(dto: saveExpenseDto) {
     await this.prismaService
-      .$executeRaw`INSERT INTO eshopexpense (date, category, name, description, cost, balance, payment_method, payment_status, receipt_image) VALUES (${dto.date}, ${dto.category}, ${dto.name}, ${dto.description}, ${dto.cost}, ${dto.balance}, ${dto.payment_method}, ${dto.payment_status}, ${dto.receipt_image})`;
-    const expenseList = await this.getAllExpenses();
+      .$executeRaw`INSERT INTO ${dto.branch}shopexpense (date, category, name, description, cost, balance, payment_method, payment_status, receipt_image) VALUES (${dto.date}, ${dto.category}, ${dto.name}, ${dto.description}, ${dto.cost}, ${dto.balance}, ${dto.payment_method}, ${dto.payment_status}, ${dto.receipt_image})`;
+    const expenseList = await this.getAllExpenses({ branch: dto.branch });
 
     return {
       statusCode: 201,
@@ -650,10 +693,10 @@ export class AppService {
     };
   }
 
-  async getAllExpenses() {
+  async getAllExpenses(dto: getBranchDataDto) {
     try {
       const expensesList = await this.prismaService
-        .$queryRaw`SELECT expense_id, date, category, name, description, cost, balance, receipt_image, createdAt FROM eshopexpense`;
+        .$queryRaw`SELECT expense_id, date, category, name, description, cost, balance, receipt_image, createdAt FROM ${dto.branch}shopexpense`;
 
       return {
         statusCode: 200,
@@ -672,7 +715,7 @@ export class AppService {
   async getExpense(dto: viewExpenseDto) {
     try {
       const expense = await this.prismaService
-        .$queryRaw`SELECT expense_id, date, category, name, description, cost, balance, receipt_image, createdAt FROM eshopexpense WHERE expense_id = ${dto.expense_id}`;
+        .$queryRaw`SELECT expense_id, date, category, name, description, cost, balance, receipt_image, createdAt FROM ${dto.branch}shopexpense WHERE expense_id = ${dto.expense_id}`;
 
       return {
         statusCode: 200,
@@ -699,7 +742,7 @@ export class AppService {
         )
         .join(', ');
 
-      const sql = `UPDATE eshopexpense SET ${setParts} WHERE expense_id = ${expense_id}`;
+      const sql = `UPDATE ${dto.branch}shopexpense SET ${setParts} WHERE expense_id = ${expense_id}`;
 
       const result = await this.prismaService.$executeRawUnsafe(sql);
 
@@ -710,7 +753,7 @@ export class AppService {
         };
       }
 
-      const updatedExpenses = await this.getAllExpenses();
+      const updatedExpenses = await this.getAllExpenses({ branch: dto.branch });
 
       return {
         statusCode: 200,
@@ -729,9 +772,9 @@ export class AppService {
   async deleteExpense(dto: genericFindDto) {
     try {
       await this.prismaService
-        .$queryRaw`DELETE FROM eshopexpense WHERE expense_id = ${dto.id}`;
+        .$queryRaw`DELETE FROM ${dto.branch}shopexpense WHERE expense_id = ${dto.id}`;
 
-      const newExpenseList = await this.getAllExpenses();
+      const newExpenseList = await this.getAllExpenses({ branch: dto.branch });
 
       return {
         statusCode: 200,
@@ -879,14 +922,14 @@ export class AppService {
         totalCost: string;
         createdAt: string;
       }[] = await this.prismaService
-        .$queryRaw`SELECT items, totalCost, createdAt FROM eshopsales WHERE client_id = ${dto.id}`;
+        .$queryRaw`SELECT items, totalCost, createdAt FROM ${dto.branch}shopsales WHERE client_id = ${dto.id}`;
 
       const projectPurchasesList: {
         items: string;
         totalCost: string;
         createdAt: string;
       }[] = await this.prismaService
-        .$queryRaw`SELECT items, totalCost, createdAt FROM eprojectssales WHERE client_id = ${dto.id}`;
+        .$queryRaw`SELECT items, totalCost, createdAt FROM ${dto.branch}projectssales WHERE client_id = ${dto.id}`;
 
       const combinedPurchasesList = [
         ...productPurchasesList,
@@ -1177,7 +1220,7 @@ export class AppService {
       const promises = cartItems.map(
         async (item: { product_id: number; quantity: number }) => {
           const product = await this.prismaService
-            .$queryRaw`SELECT quantity FROM eshopinventory WHERE product_id = ${item.product_id}`;
+            .$queryRaw`SELECT quantity FROM ${dto.branch}shopinventory WHERE product_id = ${item.product_id}`;
           const qtyInStock = product[0]?.quantity || 0;
           if (qtyInStock >= item.quantity) {
             return Promise.resolve();
@@ -1204,13 +1247,13 @@ export class AppService {
 
       // If all items have sufficient stock, proceed to insert the sale
       await this.prismaService
-        .$executeRaw`INSERT INTO eshopsales (client_id, items) VALUES (${dto.client_id}, ${dto.items})`;
+        .$executeRaw`INSERT INTO ${dto.branch}shopsales (client_id, items) VALUES (${dto.client_id}, ${dto.items})`;
 
       // Update the stock quantities
       const updatePromises = cartItems.map(
         async (item: { product_id: number; quantity: number }) => {
           await this.prismaService
-            .$executeRaw`UPDATE eshopinventory SET quantity = quantity - ${item.quantity} WHERE product_id = ${item.product_id}`;
+            .$executeRaw`UPDATE ${dto.branch}shopinventory SET quantity = quantity - ${item.quantity} WHERE product_id = ${item.product_id}`;
         },
       );
 
@@ -1234,7 +1277,7 @@ export class AppService {
   async retrieveSale(dto: genericFindDto) {
     try {
       const sale = await this.prismaService
-        .$queryRaw`SELECT * FROM eshopsales WHERE sale_id = ${dto.id}`;
+        .$queryRaw`SELECT * FROM ${dto.branch}shopsales WHERE sale_id = ${dto.id}`;
 
       return {
         statusCode: 200,
@@ -1250,14 +1293,15 @@ export class AppService {
     }
   }
 
-  async getAllSales() {
+  async getAllSales(dto: getBranchDataDto) {
     try {
       const salesList: {
         sale_id: number;
         items: string;
         client_id: number;
         registeredAt: any;
-      }[] = await this.prismaService.$queryRaw`SELECT * FROM eshopsales`;
+      }[] = await this.prismaService
+        .$queryRaw`SELECT * FROM ${dto.branch}shopsales`;
 
       const sortedSalesList = salesList.sort((a, b) => {
         const dateA = new Date(a.registeredAt).setHours(0, 0, 0, 0);
@@ -1282,7 +1326,7 @@ export class AppService {
   async deleteSale(dto: genericFindDto) {
     try {
       const saleDetails = await this.prismaService
-        .$queryRaw`SELECT items FROM eshopsales WHERE sale_id = ${dto.id}`;
+        .$queryRaw`SELECT items FROM ${dto.branch}shopsales WHERE sale_id = ${dto.id}`;
 
       if (saleDetails[0].items) {
         const items = JSON.parse(saleDetails[0].items);
@@ -1290,7 +1334,7 @@ export class AppService {
         const updatePromises = items.map(
           async (item: { product_id: number; quantity: number }) => {
             await this.prismaService
-              .$executeRaw`UPDATE eshopinventory SET quantity = quantity + ${item.quantity} WHERE product_id = ${item.product_id}`;
+              .$executeRaw`UPDATE ${dto.branch}shopinventory SET quantity = quantity + ${item.quantity} WHERE product_id = ${item.product_id}`;
           },
         );
 
@@ -1298,9 +1342,9 @@ export class AppService {
         await Promise.all(updatePromises);
       }
       await this.prismaService
-        .$queryRaw`DELETE FROM eshopsales WHERE sale_id = ${dto.id}`;
+        .$queryRaw`DELETE FROM ${dto.branch}shopsales WHERE sale_id = ${dto.id}`;
 
-      const updatedSalesList = await this.getAllSales();
+      const updatedSalesList = await this.getAllSales({ branch: dto.branch });
       return {
         statusCode: 200,
         message: 'Sale deleted successfully',
@@ -1319,15 +1363,16 @@ export class AppService {
   async addProductCategory(dto: genericAddDto) {
     try {
       await this.prismaService
-        .$executeRaw`INSERT INTO productcategory (id, name) VALUES (${dto.name})`;
+        .$executeRaw`INSERT INTO productcategories (name, description) VALUES (${dto.name}, ${dto.description})`;
 
-      const units = await this.getUnits();
+      const updatedCategories = await this.getProductCategories();
       return {
         statusCode: 200,
         message: 'Product category added successfully',
-        data: units,
+        data: updatedCategories.data,
       };
     } catch (error) {
+      console.log(error);
       return {
         statusCode: 500,
         message: 'Error while adding product category',
@@ -1357,11 +1402,11 @@ export class AppService {
     try {
       await this.prismaService
         .$executeRaw`DELETE FROM productcategories WHERE id = ${dto.id}`;
-      const units = await this.getProductCategories();
+      const updatedCategories = await this.getProductCategories();
       return {
         statusCode: 200,
         message: 'Product category deleted successfully',
-        data: units,
+        data: updatedCategories.data,
       };
     } catch (error) {
       return {
@@ -1375,13 +1420,13 @@ export class AppService {
   async addMUnit(dto: genericAddDto) {
     try {
       await this.prismaService
-        .$executeRaw`INSERT INTO munits (unit_id, name) VALUES (${dto.name})`;
+        .$executeRaw`INSERT INTO munits (name, description) VALUES (${dto.name}, ${dto.description})`;
 
       const units = await this.getUnits();
       return {
         statusCode: 200,
         message: 'Measurement unit added successfully',
-        data: units,
+        data: units.data,
       };
     } catch (error) {
       return {
@@ -1417,7 +1462,7 @@ export class AppService {
       return {
         statusCode: 200,
         message: 'Measurement unit deleted successfully',
-        data: units,
+        data: units.data,
       };
     } catch (error) {
       return {
@@ -1468,7 +1513,7 @@ export class AppService {
   async getDayProductsSalesReport(dto: reportDto) {
     try {
       const salesList = await this.prismaService
-        .$queryRaw`SELECT client_id, items, totalCost FROM eshopsales JOIN client ON eshopsales.client_id = client.client_id WHERE DATE(createdAt) = ${dto.date}`;
+        .$queryRaw`SELECT client_id, items, totalCost FROM ${dto.branch}shopsales JOIN client ON ${dto.branch}shopsales.client_id = client.client_id WHERE DATE(createdAt) = ${dto.date}`;
       return {
         statusCode: 200,
         message: `Product sales report for ${dto.date} retrieved successfully`,
@@ -1486,7 +1531,7 @@ export class AppService {
   async getMonthProductsSalesReport(dto: reportDto) {
     try {
       const salesList = await this.prismaService
-        .$queryRaw`SELECT client_id, items, totalCost FROM eshopsales JOIN client ON eshopsales.client_id = client.client_id WHERE DATE_FORMAT(createdAt, '%Y-%m') = ${dto.date}`;
+        .$queryRaw`SELECT client_id, items, totalCost FROM ${dto.branch}shopsales JOIN client ON ${dto.branch}shopsales.client_id = client.client_id WHERE DATE_FORMAT(createdAt, '%Y-%m') = ${dto.date}`;
       return {
         statusCode: 200,
         message: `Product sales report for ${dto.date} retrieved successfully`,
@@ -1504,7 +1549,7 @@ export class AppService {
   async getDayProjectsSalesReport(dto: reportDto) {
     try {
       const salesList = await this.prismaService
-        .$queryRaw`SELECT project_id, client_id, items, totalCost FROM projectsales JOIN client ON projectsales.client_id = client.client_id WHERE DATE(createdAt) = ${dto.date}`;
+        .$queryRaw`SELECT project_id, client_id, items, totalCost FROM ${dto.branch}projectsales JOIN client ON ${dto.branch}projectsales.client_id = client.client_id WHERE DATE(createdAt) = ${dto.date}`;
       return {
         statusCode: 200,
         message: `Project sales report for ${dto.date} retrieved successfully`,
@@ -1522,7 +1567,7 @@ export class AppService {
   async getMonthProjectsSalesReport(dto: reportDto) {
     try {
       const salesList = await this.prismaService
-        .$queryRaw`SELECT project_id, client_id, items, totalCost FROM projectsales JOIN client ON projectsales.client_id = client.client_id WHERE DATE_FORMAT(createdAt, '%Y-%m') = ${dto.date}`;
+        .$queryRaw`SELECT project_id, client_id, items, totalCost FROM ${dto.branch}projectsales JOIN client ON ${dto.branch}projectsales.client_id = client.client_id WHERE DATE_FORMAT(createdAt, '%Y-%m') = ${dto.date}`;
       return {
         statusCode: 200,
         message: `Project sales report for ${dto.date} retrieved successfully`,

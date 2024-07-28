@@ -8,6 +8,7 @@ import {
   genericAddDto,
   genericEditDto,
   genericFindDto,
+  getBranchDataDto,
   registerProductDto,
   registerProjectDto,
   reportDto,
@@ -69,18 +70,18 @@ export class AppController {
   }
 
   @MessagePattern({ cmd: 'GET_PRODUCT_STOCK' })
-  getInventoryStock() {
-    return this.appService.getEquatorialShopStock();
+  getInventoryStock(data: getBranchDataDto) {
+    return this.appService.getShopStock(data);
   }
 
   @MessagePattern({ cmd: 'GET_PROJECT_STOCK' })
-  getProjectStock() {
-    return this.appService.getEquatorialProjectStock();
+  getProjectStock(data: getBranchDataDto) {
+    return this.appService.getProjectStock(data);
   }
 
   @MessagePattern({ cmd: 'GET_PRODUCT_RESTOCK_RECORDS' })
-  getInventoryStockRestockRecords() {
-    return this.appService.getProductRestockRecords();
+  getInventoryStockRestockRecords(data: getBranchDataDto) {
+    return this.appService.getProductRestockRecords(data);
   }
 
   @MessagePattern({ cmd: 'GET_PROJECT_RESTOCK_RECORDS' })
@@ -89,13 +90,13 @@ export class AppController {
   }
 
   @MessagePattern({ cmd: 'GET_PRODUCT_DEPLETION_RECORDS' })
-  getInventoryStockDepletionRecords() {
-    return this.appService.getProductDepleteRecords();
+  getInventoryStockDepletionRecords(data: getBranchDataDto) {
+    return this.appService.getProductDepleteRecords(data);
   }
 
   @MessagePattern({ cmd: 'GET_PROJECT_DEPLETION_RECORDS' })
-  getProjectDepletionRecords() {
-    return this.appService.getProjectDepleteRecords();
+  getProjectDepletionRecords(data: getBranchDataDto) {
+    return this.appService.getProjectDepleteRecords(data);
   }
 
   @MessagePattern({ cmd: 'RESTOCK_PRODUCT' })
@@ -165,8 +166,8 @@ export class AppController {
   }
 
   @MessagePattern({ cmd: 'GET_ALL_EXPENSES' })
-  async getAllExpenses() {
-    return this.appService.getAllExpenses();
+  async getAllExpenses(data: getBranchDataDto) {
+    return this.appService.getAllExpenses(data);
   }
 
   @MessagePattern({ cmd: 'DELETE_EXPENSE' })
@@ -295,8 +296,8 @@ export class AppController {
   }
 
   @MessagePattern({ cmd: 'GET_ALL_SALES' })
-  async getAllSales() {
-    return this.appService.getAllSales();
+  async getAllSales(data: getBranchDataDto) {
+    return this.appService.getAllSales(data);
   }
 
   //generics
