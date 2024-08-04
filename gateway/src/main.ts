@@ -12,7 +12,7 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
-  const PORT = process.env.PORT || 3000;
+  const PORT = process.env.PORT || 3015;
   await app.listen(PORT, () =>
     console.log(`Application is running on port ${PORT}`),
   );

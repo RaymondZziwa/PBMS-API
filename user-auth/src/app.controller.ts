@@ -4,6 +4,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   createUserDto,
   deleteUserDto,
+  editUserInfoDto,
   getUserDto,
   loginDto,
   loginWithAccessKeyDto,
@@ -76,6 +77,11 @@ export class AuthMicroserviceController {
   @MessagePattern({ cmd: 'RESET_PASSWORD' })
   resetPassword(@Payload() data: resetPasswordDto) {
     return this.authService.resetPassword(data);
+  }
+
+  @MessagePattern({ cmd: 'EDIT_USER_INFO' })
+  editUser(@Payload() data: editUserInfoDto) {
+    return this.authService.editUser(data);
   }
 
   @MessagePattern({ cmd: 'GET_ALL_USERS' })

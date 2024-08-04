@@ -85,17 +85,17 @@ export class AppController {
   }
 
   @MessagePattern({ cmd: 'GET_PROJECT_RESTOCK_RECORDS' })
-  getProjectRestockRecords() {
-    return this.appService.getProjectRestockRecords;
+  getProjectRestockRecords(data: getBranchDataDto) {
+    return this.appService.getProjectRestockRecords(data);
   }
 
   @MessagePattern({ cmd: 'GET_PRODUCT_DEPLETION_RECORDS' })
-  getInventoryStockDepletionRecords(data: getBranchDataDto) {
+  getInventoryStockDepletionRecords(@Payload() data: getBranchDataDto) {
     return this.appService.getProductDepleteRecords(data);
   }
 
   @MessagePattern({ cmd: 'GET_PROJECT_DEPLETION_RECORDS' })
-  getProjectDepletionRecords(data: getBranchDataDto) {
+  getProjectDepletionRecords(@Payload() data: getBranchDataDto) {
     return this.appService.getProjectDepleteRecords(data);
   }
 
@@ -285,6 +285,11 @@ export class AppController {
     return this.appService.saveSale(data);
   }
 
+  @MessagePattern({ cmd: 'SAVE_PROJECTS_SALE' })
+  async saveProjectsSale(@Payload() data: saveSaleDto) {
+    return this.appService.saveProjectsSale(data);
+  }
+
   @MessagePattern({ cmd: 'RETRIEVE_SALE' })
   async retrieveSale(@Payload() data: genericFindDto) {
     return this.appService.retrieveSale(data);
@@ -295,9 +300,14 @@ export class AppController {
     return this.appService.deleteSale(data);
   }
 
-  @MessagePattern({ cmd: 'GET_ALL_SALES' })
+  @MessagePattern({ cmd: 'GET_ALL_PRODUCTS_SALES' })
   async getAllSales(data: getBranchDataDto) {
-    return this.appService.getAllSales(data);
+    return this.appService.getAllProductsSales(data);
+  }
+
+  @MessagePattern({ cmd: 'GET_ALL_PROJECTS_SALES' })
+  async getAllProjectSales(data: getBranchDataDto) {
+    return this.appService.getAllProjectsSales(data);
   }
 
   //generics

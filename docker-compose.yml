@@ -1,46 +1,81 @@
 version: '3.8'
+
 services:
-    profdevdb:
-      image: mysql:latest
-      ports:
-        - 3306:3306
-      env_file:
-        ./user-auth/.env
-      environment:
-        MYSQL_ROOT_PASSWORD: 123
-    # gateway:
-    #   build: ./gateway
-    #   volumes:
-    #     - ./gateway/src:/usr/src/app/src
-    #   ports:
-    #     - 3000:3000
-    #   command: npm run start:dev
-    #   environment:
-    #     - PORT=3000
-    # users-auth:
-    #   build: ./user-auth
-    #   volumes:
-    #     - ./user-auth/src:/usr/src/app/src
-    #   command: npm run start:dev
-    #   depends_on:
-    #   - redis
-    #   - profdevdb
-    # nats:
-    #   image: nats
-    #   ports:
-    #     - "4222:4222"
-    redis:
-      image: redis
-      volumes:
-            - ./user-auth/src/cache/data:/data
-      ports:
-        - 6379:6379
-    redis-commander:
-      container_name: redis-commander
-      hostname: redis-commander
-      image: ghcr.io/joeferner/redis-commander:latest
-      environment:
-        - REDIS_HOSTS=local:redis:6379
-      ports:
-        - "8081:8081"
-    
+  # MySQL Service
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ''
+      MYSQL_DATABASE: pbms
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ''
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # Redis Service
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  # Gateway Service
+  gateway:
+    build: ./gateway
+    container_name: gateway
+    environment:
+      DATABASE_HOST: mysql
+      DATABASE_USER: myuser
+      DATABASE_PASSWORD: mypassword
+      DATABASE_NAME: pbms
+      REDIS_HOST: redis
+      NATS_URL: nats://nats:4222
+    ports:
+      - "3015:3015"
+
+  # User Auth Microservice
+  user-auth:
+    build: ./user-auth
+    container_name: user-auth
+    environment:
+      DATABASE_HOST: mysql
+      DATABASE_USER: myuser
+      DATABASE_PASSWORD: mypassword
+      DATABASE_NAME: pbms
+      REDIS_HOST: redis
+      NATS_URL: nats://nats:4222
+
+  # Shop Microservice
+  shop:
+    build: ./shop
+    container_name: shop
+    environment:
+      DATABASE_HOST: mysql
+      DATABASE_USER: myuser
+      DATABASE_PASSWORD: mypassword
+      DATABASE_NAME: pbms
+      REDIS_HOST: redis
+      NATS_URL: nats://nats:4222
+    volumes:
+      - ./shop/src:/usr/src/app/src
+
+  # NATS Service
+  nats:
+    image: nats:latest
+    container_name: nats
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    networks:
+      - my_network
+
+networks:
+  my_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local

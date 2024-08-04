@@ -3,6 +3,7 @@ import { PrismaService } from './prisma/prisma.service';
 import {
   createUserDto,
   deleteUserDto,
+  editUserInfoDto,
   getUserDto,
   loginDto,
   loginWithAccessKeyDto,
@@ -308,6 +309,107 @@ export class AuthMicroserviceService {
         statusCode: 500,
         message:
           "Internal server error. Can't perform this action. Contact system support for assistance.",
+      };
+    }
+  }
+
+  async editUser(dto: editUserInfoDto) {
+    try {
+      // Log the input DTO for debugging
+      console.log(dto);
+
+      // Case 1: Update user by user_id
+      if (dto.user_id) {
+        // Retrieve the current user data based on user_id
+        const user: any[] = await this.prismaService
+          .$queryRaw`SELECT email, password FROM user WHERE user_id = ${dto.user_id}`;
+
+        // Check if the user exists
+        if (user.length > 0) {
+          // Case 1.1: Only update email
+          if (dto.email && !dto.new_password) {
+            await this.prismaService
+              .$executeRaw`UPDATE user SET email = ${dto.email} WHERE user_id = ${dto.user_id}`;
+            return {
+              statusCode: 200,
+              message: 'User email updated successfully.',
+              data: null,
+            };
+
+            // Case 1.2: Only update password
+          } else if (!dto.email && dto.new_password) {
+            const newPassword = await bcrypt.hash(dto.new_password, 12);
+            await this.prismaService
+              .$executeRaw`UPDATE user SET password = ${newPassword} WHERE user_id = ${dto.user_id}`;
+            return {
+              statusCode: 200,
+              message: 'User password updated successfully.',
+              data: null,
+            };
+
+            // Case 1.3: Update both email and password
+          } else if (dto.email && dto.new_password) {
+            const newPassword = await bcrypt.hash(dto.new_password, 12);
+            await this.prismaService
+              .$executeRaw`UPDATE user SET email = ${dto.email}, password = ${newPassword} WHERE user_id = ${dto.user_id}`;
+            return {
+              statusCode: 200,
+              message: 'User email and password updated successfully.',
+              data: null,
+            };
+          } else {
+            // No fields to update
+            return {
+              statusCode: 400,
+              message: 'No valid fields provided for update.',
+              data: null,
+            };
+          }
+        } else {
+          // User with the given user_id does not exist
+          return {
+            statusCode: 404,
+            message: 'User not found.',
+            data: null,
+          };
+        }
+
+        // Case 2: When user_id is not provided
+      } else if (dto.email) {
+        // Check if a user with the provided email already exists
+        const existingUser: [] = await this.prismaService
+          .$queryRaw`SELECT email FROM user WHERE email = ${dto.email}`;
+
+        if (existingUser.length > 0) {
+          // Email already exists
+          return {
+            statusCode: 409,
+            message: 'Email is already in use.',
+            data: null,
+          };
+        } else {
+          // No user exists with the provided email
+          return {
+            statusCode: 404,
+            message: 'No user found with the given email.',
+            data: null,
+          };
+        }
+      } else {
+        // Neither user_id nor email is provided
+        return {
+          statusCode: 400,
+          message: 'No user_id or email provided.',
+          data: null,
+        };
+      }
+    } catch (error) {
+      console.log('Error while editing user: ', error);
+      return {
+        statusCode: 500,
+        message:
+          "Internal server error. Can't perform this action. Contact system support for assistance.",
+        data: null,
       };
     }
   }

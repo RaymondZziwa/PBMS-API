@@ -167,10 +167,6 @@ export class saveSaleDto {
   @IsNotEmpty()
   branch: string;
 
-  @IsString()
-  @IsNotEmpty()
-  receipt_number: string;
-
   @IsNumber()
   @IsNotEmpty()
   client_id: number;
@@ -178,14 +174,6 @@ export class saveSaleDto {
   @IsString()
   @IsNotEmpty()
   total_amount: string;
-
-  @IsString()
-  @IsNotEmpty()
-  balance: string;
-
-  @IsString()
-  @IsNotEmpty()
-  payment_status: string;
 
   @IsString()
   @IsNotEmpty()
@@ -258,7 +246,6 @@ export class saveExpenseDto {
   payment_status: string;
 
   @IsString()
-  @IsNotEmpty()
   receipt_image?: string;
 }
 
