@@ -15,6 +15,15 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
+  nats:
+    image: nats:latest
+    container_name: nats
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    networks:
+      - my_network
+
   # Redis Service
   redis:
     image: redis:latest
@@ -61,16 +70,6 @@ services:
       NATS_URL: nats://nats:4222
     volumes:
       - ./shop/src:/usr/src/app/src
-
-  # NATS Service
-  nats:
-    image: nats:latest
-    container_name: nats
-    ports:
-      - "4222:4222"
-      - "8222:8222"
-    networks:
-      - my_network
 
 networks:
   my_network:
