@@ -56,17 +56,17 @@ export class equatorialShopController {
     return this.natsClient.send({ cmd: 'EDIT_PRODUCT' }, req.body);
   }
 
-  @Get('/get-product-stock')
+  @Post('/get-product-stock')
   getProductStock(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_PRODUCT_STOCK' }, req.body);
   }
 
-  @Get('/get-project-stock')
+  @Post('/get-project-stock')
   getProjectStock(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_PROJECT_STOCK' }, req.body);
   }
 
-  @Get('/product-restock-records')
+  @Post('/product-restock-records')
   getProductRestockRecords(@Req() req: Request) {
     return this.natsClient.send(
       { cmd: 'GET_PRODUCT_RESTOCK_RECORDS' },
@@ -74,7 +74,7 @@ export class equatorialShopController {
     );
   }
 
-  @Get('/product-deplete-records')
+  @Post('/product-deplete-records')
   getProductDepleteRecords(@Req() req: Request) {
     return this.natsClient.send(
       { cmd: 'GET_PRODUCT_DEPLETION_RECORDS' },
@@ -82,7 +82,7 @@ export class equatorialShopController {
     );
   }
 
-  @Get('/project-restock-records')
+  @Post('/project-restock-records')
   getProjectRestockRecords(@Req() req: Request) {
     return this.natsClient.send(
       { cmd: 'GET_PROJECT_RESTOCK_RECORDS' },
@@ -90,7 +90,7 @@ export class equatorialShopController {
     );
   }
 
-  @Get('/get-project-deplete-records')
+  @Post('/get-project-deplete-records')
   getProjectDepleteRecords(@Req() req: Request) {
     return this.natsClient.send(
       { cmd: 'GET_PROJECT_DEPLETION_RECORDS' },
@@ -118,12 +118,12 @@ export class equatorialShopController {
     return this.natsClient.send({ cmd: 'DEPLETION_PROJECT' }, req.body);
   }
 
-  @Get('/product-stock')
+  @Post('/product-stock')
   productStock(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_PRODUCT_STOCK' }, req.body);
   }
 
-  @Get('/project-stock')
+  @Post('/project-stock')
   projectStock(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_PROJECT_STOCK' }, req.body);
   }
@@ -149,7 +149,7 @@ export class equatorialShopController {
     return this.natsClient.send({ cmd: 'DELETE_EXPENSE' }, req.body);
   }
 
-  @Get('/get-expense')
+  @Post('/get-expense')
   getExpense(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_EXPENSE' }, req.body);
   }
@@ -159,23 +159,23 @@ export class equatorialShopController {
     return this.natsClient.send({ cmd: 'EDIT_EXPENSE' }, req.body);
   }
 
-  @Get('/all-expenses')
+  @Post('/get-all-expenses')
   getAllExpenses(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_ALL_EXPENSES' }, req.body);
   }
 
   //reports
-  @Get('/get-day-purchase-report')
+  @Post('/get-day-purchase-report')
   getDayPurchaseReport(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_DAY_PURCHASE_REPORT' }, req.body);
   }
 
-  @Get('/get-month-purchase-report')
+  @Post('/get-month-purchase-report')
   getMonthPurchaseReport(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_MONTH_PURCHASE_REPORT' }, req.body);
   }
 
-  @Get('/get-day-products-sales-report')
+  @Post('/get-day-products-sales-report')
   getDayProductsSalesReport(@Req() req: Request) {
     return this.natsClient.send(
       { cmd: 'GET_DAY_PRODUCT_SALES_REPORT' },
@@ -183,7 +183,7 @@ export class equatorialShopController {
     );
   }
 
-  @Get('/get-month-products-sales-report')
+  @Post('/get-month-products-sales-report')
   getMonthProductsSalesReport(@Req() req: Request) {
     return this.natsClient.send(
       { cmd: 'GET_MONTH_PRODUCT_SALES_REPORT' },
@@ -191,7 +191,7 @@ export class equatorialShopController {
     );
   }
 
-  @Get('/get-day-projects-sales-report')
+  @Post('/get-day-projects-sales-report')
   getDayProjectsSalesReport(@Req() req: Request) {
     return this.natsClient.send(
       { cmd: 'GET_DAY_PROJECTS_SALES_REPORT' },
@@ -199,7 +199,7 @@ export class equatorialShopController {
     );
   }
 
-  @Get('/get-month-projects-sales-report')
+  @Post('/get-month-projects-sales-report')
   getMonthProjectsSalesReport(@Req() req: Request) {
     return this.natsClient.send(
       { cmd: 'GET_MONTH_PROJECTS_SALES_REPORT' },
@@ -242,9 +242,14 @@ export class equatorialShopController {
   }
 
   //pos
-  @Post('/save-esale')
+  @Post('/save-sale')
   saveSale(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'SAVE_SALE' }, req.body);
+  }
+
+  @Post('/save-projects-sale')
+  saveProjectsSale(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'SAVE_PROJECTS_SALE' }, req.body);
   }
 
   @Post('/delete-esale')
@@ -257,9 +262,14 @@ export class equatorialShopController {
     return this.natsClient.send({ cmd: 'RETRIEVE_SALE' }, req.body);
   }
 
-  @Get('/get-all-esales')
+  @Post('/get-all-products-sales')
   getAllSales(@Req() req: Request) {
-    return this.natsClient.send({ cmd: 'GET_ALL_SALES' }, req.body);
+    return this.natsClient.send({ cmd: 'GET_ALL_PRODUCTS_SALES' }, req.body);
+  }
+
+  @Post('/get-all-projects-sales')
+  getAllProjectsSales(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_ALL_PROJECTS_SALES' }, req.body);
   }
 
   //massage
@@ -278,7 +288,7 @@ export class equatorialShopController {
     return this.natsClient.send({ cmd: 'DELETE_ENTRY' }, req.body);
   }
 
-  @Get('/c')
+  @Get('/massage-income-entries')
   getAllIncomeEntries(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_INCOME_ENTRIES' }, req.body);
   }

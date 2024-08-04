@@ -200,3 +200,23 @@ export class resetPasswordDto {
   @IsString()
   new_password: string;
 }
+
+export class editUserInfoDto {
+  @IsNumber()
+  user_id: number;
+
+  @IsEmail()
+  current_email: number;
+
+  @IsEmail()
+  email: string;
+
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @MaxLength(20, { message: 'Password cannot be longer than 20 characters' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/, {
+    message:
+      'Password must contain at least one lowercase letter, one uppercase letter, and one number',
+  })
+  @IsString()
+  new_password: string;
+}

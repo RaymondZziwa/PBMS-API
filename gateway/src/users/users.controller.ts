@@ -10,7 +10,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 
-@Controller('api/users')
+@Controller('api/v1/')
 export class UsersController {
   constructor(
     @Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
@@ -192,6 +192,12 @@ export class UsersController {
   @Post('/reset-password')
   resetPassword(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'RESET_PASSWORD' }, req.body);
+  }
+
+  //edit-user-info
+  @Post('/edit-user-info')
+  editUserInfo(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'EDIT_USER_INFO' }, req.body);
   }
 
   //get-all-users

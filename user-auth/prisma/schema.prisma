@@ -73,7 +73,7 @@ model client {
   client_id       Int               @id @default(autoincrement())
   first_name      String
   last_name       String
-  email           String?           @unique
+  email           String?
   phone           String            @unique
   address         String?
   externalreceipt externalreceipt[]
@@ -88,9 +88,10 @@ model client {
 model equatorialshopsales {
   sale_id   Int      @id @default(autoincrement())
   client    client   @relation(fields: [client_id], references: [client_id])
-  client_id Int      @unique
+  client_id Int      
   items     String
   totalCost String
+  payment_method String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }
@@ -98,9 +99,10 @@ model equatorialshopsales {
 model equatorialprojectssales {
   sale_id   Int      @id @default(autoincrement())
   client    client   @relation(fields: [client_id], references: [client_id])
-  client_id Int      @unique
+  client_id Int      
   items     String
   totalCost String
+  payment_method String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }
@@ -108,9 +110,10 @@ model equatorialprojectssales {
 model masanafuprojectssales {
   sale_id   Int      @id @default(autoincrement())
   client    client   @relation(fields: [client_id], references: [client_id])
-  client_id Int      @unique
+  client_id Int      
   items     String
   totalCost String
+  payment_method String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }
@@ -118,9 +121,10 @@ model masanafuprojectssales {
 model masanafushopsales {
   sale_id      Int      @id @default(autoincrement())
   client       client   @relation(fields: [client_id], references: [client_id])
-  client_id    Int      @unique
+  client_id    Int      
   items        String
   totalCost    String
+  payment_method String
   registeredAt DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
 }
@@ -182,7 +186,7 @@ model project {
 
 model munits {
   unit_id     Int      @id @default(autoincrement())
-  name        String
+  unit_name        String
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
