@@ -23,7 +23,7 @@ import { accessKeyValidatorHelperService } from './helpers/accessKeyValidator.se
     RedisCacheModule,
     CacheModule.register({
       store: redisStore,
-      host: 'redis-server',
+      host: '181.215.68.133',
       port: 6379,
       username: '',
       password: '',
