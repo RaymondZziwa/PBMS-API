@@ -7,7 +7,7 @@ import { redisStore } from 'cache-manager-redis-yet';
   imports: [
     CacheModule.register({
       store: redisStore,
-      host: 'localhost',
+      host: 'redis-server',
       port: '6379',
       username: '',
       password: '',
