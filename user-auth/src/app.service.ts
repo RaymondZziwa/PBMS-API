@@ -165,12 +165,13 @@ export class AuthMicroserviceService {
           statusCode: 200,
           message: `An access key has been sent to your registered email address (${data.email}).`,
         };
+      } else {
+        return {
+          statusCode: 404,
+          message:
+            "We couldn't find an account associated with the email you provided.",
+        };
       }
-      return {
-        statusCode: 404,
-        message:
-          "We couldn't find an account associated with the email you provided.",
-      };
     } catch (error) {
       console.log(
         'Error while generating and sending user access key : ',
