@@ -25,6 +25,7 @@
     "@nestjs/microservices": "^10.3.9",
     "@nestjs/platform-express": "^10.0.0",
     "@prisma/client": "^5.13.0",
+    "class-validator": "^0.14.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
   },
