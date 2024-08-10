@@ -596,7 +596,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}projectsinventory`;
       const stockData = await this.prismaService
-        .$queryRaw`SELECT * FROM ${Prisma.raw(tableName)} JOIN project ON ${Prisma.raw(tableName)}.project_id = project.project_id JOIN munits ON $${Prisma.raw(tableName)}.units = munits.unit_id`;
+        .$queryRaw`SELECT * FROM ${Prisma.raw(tableName)} JOIN project ON ${Prisma.raw(tableName)}.project_id = project.project_id JOIN munits ON ${Prisma.raw(tableName)}.units = munits.unit_id`;
 
       return {
         statusCode: 200,
