@@ -145,18 +145,18 @@ export class AppService {
           units: number;
         }) => {
           const product: [] = await this.prismaService
-            .$queryRaw`SELECT * FROM ${tableName} WHERE product_id = ${item.productId} AND units = ${item.units}`;
+            .$queryRaw`SELECT * FROM ${Prisma.raw(tableName)} WHERE product_id = ${item.productId} AND units = ${item.units}`;
 
           if (product.length === 0) {
             await this.prismaService
-              .$executeRaw`INSERT INTO ${tableName} (product_id, quantity, units) VALUES (${item.productId}, ${item.quantity}, ${item.units})`;
+              .$executeRaw`INSERT INTO ${Prisma.raw(tableName)} (product_id, quantity, units) VALUES (${item.productId}, ${item.quantity}, ${item.units})`;
             await this.prismaService
-              .$executeRaw`INSERT INTO ${recordsTableName} (items, quantity, units, source, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.source}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
+              .$executeRaw`INSERT INTO ${Prisma.raw(recordsTableName)} (items, quantity, units, source, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.source}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
           } else {
             await this.prismaService
-              .$executeRaw`UPDATE ${tableName} SET quantity = quantity + ${parseFloat(item.quantity)} WHERE product_id = ${item.productId} AND units = ${item.units}`;
+              .$executeRaw`UPDATE ${Prisma.raw(tableName)} SET quantity = quantity + ${parseFloat(item.quantity)} WHERE product_id = ${item.productId} AND units = ${item.units}`;
             await this.prismaService
-              .$executeRaw`INSERT INTO ${recordsTableName} (items, quantity, units, source, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.source}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
+              .$executeRaw`INSERT INTO ${Prisma.raw(recordsTableName)} (items, quantity, units, source, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.source}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
           }
         },
       );
@@ -196,8 +196,7 @@ export class AppService {
           units: number;
         }) => {
           const product = await this.prismaService
-            .$queryRaw`SELECT * FROM ${tableName} WHERE product_id = ${item.productId} AND units = ${item.units}`;
-          console.log(product);
+            .$queryRaw`SELECT * FROM ${Prisma.raw(tableName)} WHERE product_id = ${item.productId} AND units = ${item.units}`;
           const qtyInStock = product[0]?.quantity || 0;
           if (qtyInStock >= parseFloat(item.quantity)) {
             return Promise.resolve();
@@ -225,9 +224,9 @@ export class AppService {
           units: number;
         }) => {
           await this.prismaService
-            .$executeRaw`UPDATE ${tableName} SET quantity = quantity - ${parseFloat(item.quantity)} WHERE product_id = ${item.productId}`;
+            .$executeRaw`UPDATE ${Prisma.raw(tableName)} SET quantity = quantity - ${parseFloat(item.quantity)} WHERE product_id = ${item.productId}`;
           await this.prismaService
-            .$queryRaw`INSERT INTO ${recordsTableName} (items, quantity, units, destination, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.destination}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
+            .$queryRaw`INSERT INTO ${Prisma.raw(recordsTableName)} (items, quantity, units, destination, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.destination}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
         },
       );
 
@@ -257,7 +256,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}shopinventory`;
       const stockData = await this.prismaService
-        .$queryRaw`SELECT * FROM ${tableName} JOIN product ON ${tableName}.product_id = product.product_id JOIN munits ON ${tableName}.units = munits.unit_id`;
+        .$queryRaw`SELECT * FROM ${Prisma.raw(tableName)} JOIN product ON ${Prisma.raw(tableName)}.product_id = product.product_id JOIN munits ON ${Prisma.raw(tableName)}.units = munits.unit_id`;
 
       return {
         statusCode: 200,
@@ -277,8 +276,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}shoprestockrecord`;
       const restockRecords = await this.prismaService.$queryRaw`
-      SELECT * 
-      FROM ${tableName} JOIN product ON ${tableName}.items = product.product_id JOIN munits ON ${tableName}.units = munits.unit_id ORDER BY ${tableName}.transaction_date DESC`;
+      SELECT * FROM ${Prisma.raw(tableName)} JOIN product ON ${Prisma.raw(tableName)}.items = product.product_id JOIN munits ON ${Prisma.raw(tableName)}.units = munits.unit_id ORDER BY ${Prisma.raw(tableName)}.transaction_date DESC`;
 
       return {
         statusCode: 200,
@@ -299,8 +297,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}shopStocktakeoutrecord`;
       const depleteRecords = await this.prismaService.$queryRaw`
-      SELECT * 
-      FROM ${tableName} JOIN product ON ${tableName}.items = product.product_id JOIN munits ON ${tableName}.units = munits.unit_id ORDER BY ${tableName}.transaction_date DESC`;
+      SELECT * FROM ${Prisma.raw(tableName)} JOIN product ON ${Prisma.raw(tableName)}.items = product.product_id JOIN munits ON ${Prisma.raw(tableName)}.units = munits.unit_id ORDER BY ${Prisma.raw(tableName)}.transaction_date DESC`;
 
       return {
         statusCode: 200,
@@ -341,7 +338,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}shoprestockrecord`;
       await this.prismaService
-        .$queryRaw`DELETE * FROM ${tableName} WHERE record_id = ${dto.id}`;
+        .$queryRaw`DELETE * FROM ${Prisma.raw(tableName)} WHERE record_id = ${dto.id}`;
 
       return {
         statusCode: 200,
@@ -360,7 +357,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}shopStocktakeoutrecord`;
       await this.prismaService
-        .$queryRaw`DELETE * FROM ${tableName} WHERE record_id = ${dto.id}`;
+        .$queryRaw`DELETE * FROM ${Prisma.raw(tableName)} WHERE record_id = ${dto.id}`;
 
       return {
         statusCode: 200,
@@ -440,7 +437,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}projectsinventory`;
       const projectData = await this.prismaService
-        .$executeRaw`SELECT * FROM ${tableName} WHERE project_id = ${dto.id}`;
+        .$executeRaw`SELECT * FROM ${Prisma.raw(tableName)} WHERE project_id = ${dto.id}`;
 
       return {
         statusCode: 200,
@@ -488,18 +485,18 @@ export class AppService {
           units: number;
         }) => {
           const project: [] = await this.prismaService
-            .$queryRaw`SELECT * FROM ${tableName}  WHERE project_id = ${item.productId} AND units = ${item.units}`;
+            .$queryRaw`SELECT * FROM ${Prisma.raw(tableName)} WHERE project_id = ${item.productId} AND units = ${item.units}`;
 
           if (project.length === 0) {
             await this.prismaService
-              .$executeRaw`INSERT INTO ${tableName} (project_id, quantity, units) VALUES (${item.productId}, ${item.quantity}, ${item.units})`;
+              .$executeRaw`INSERT INTO ${Prisma.raw(tableName)} (project_id, quantity, units) VALUES (${item.productId}, ${item.quantity}, ${item.units})`;
             await this.prismaService
-              .$executeRaw`INSERT INTO ${recordsTableName} (items, quantity, units, source, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.source}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
+              .$executeRaw`INSERT INTO ${Prisma.raw(recordsTableName)} (items, quantity, units, source, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.source}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
           } else {
             await this.prismaService
-              .$executeRaw`UPDATE ${tableName} SET quantity = quantity + ${parseFloat(item.quantity)} WHERE project_id = ${item.productId} AND units = ${item.units}`;
+              .$executeRaw`UPDATE ${Prisma.raw(tableName)} SET quantity = quantity + ${parseFloat(item.quantity)} WHERE project_id = ${item.productId} AND units = ${item.units}`;
             await this.prismaService
-              .$executeRaw`INSERT INTO ${recordsTableName} (items, quantity, units, source, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.source}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
+              .$executeRaw`INSERT INTO ${Prisma.raw(recordsTableName)} (items, quantity, units, source, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.source}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
           }
         },
       );
@@ -538,7 +535,7 @@ export class AppService {
           units: number;
         }) => {
           const product = await this.prismaService
-            .$queryRaw`SELECT * FROM ${tableName} WHERE project_id = ${item.productId} AND units = ${item.units}`;
+            .$queryRaw`SELECT * FROM ${Prisma.raw(tableName)} WHERE project_id = ${item.productId} AND units = ${item.units}`;
           const qtyInStock = product[0]?.quantity || 0;
           if (qtyInStock >= parseFloat(item.quantity)) {
             return Promise.resolve();
@@ -567,9 +564,9 @@ export class AppService {
           units: number;
         }) => {
           await this.prismaService
-            .$executeRaw`UPDATE ${tableName} SET quantity = quantity - ${parseFloat(item.quantity)} WHERE project_id = ${item.productId}`;
+            .$executeRaw`UPDATE ${Prisma.raw(tableName)} SET quantity = quantity - ${parseFloat(item.quantity)} WHERE project_id = ${item.productId}`;
           await this.prismaService
-            .$queryRaw`INSERT INTO ${recordsTableName} (items, quantity, units, destination, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.destination}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
+            .$queryRaw`INSERT INTO ${Prisma.raw(recordsTableName)} (items, quantity, units, destination, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.destination}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
         },
       );
 
@@ -599,7 +596,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}projectsinventory`;
       const stockData = await this.prismaService
-        .$queryRaw`SELECT * FROM ${tableName} JOIN project ON ${tableName}.project_id = project.project_id JOIN munits ON ${tableName}.units = munits.unit_id`;
+        .$queryRaw`SELECT * FROM ${Prisma.raw(tableName)} JOIN project ON ${Prisma.raw(tableName)}.project_id = project.project_id JOIN munits ON $${Prisma.raw(tableName)}.units = munits.unit_id`;
 
       return {
         statusCode: 200,
@@ -619,7 +616,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}projectrestockrecord`;
       const restockRecords: [] = await this.prismaService.$queryRaw`
-        SELECT * FROM ${tableName} JOIN project ON ${tableName}.items = project.project_id JOIN munits ON ${tableName}.units = munits.unit_id
+        SELECT * FROM ${Prisma.raw(tableName)} JOIN project ON ${Prisma.raw(tableName)}.items = project.project_id JOIN munits ON ${Prisma.raw(tableName)}.units = munits.unit_id
       `;
 
       return {
@@ -640,7 +637,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}projecttakeoutrecord`;
       const depleteRecords: [] = await this.prismaService.$queryRaw`
-        SELECT * FROM ${tableName} JOIN project ON ${tableName}.items = project.project_id JOIN munits ON ${tableName}.units = munits.unit_id
+        SELECT * FROM ${Prisma.raw(tableName)} JOIN project ON ${Prisma.raw(tableName)}.items = project.project_id JOIN munits ON ${Prisma.raw(tableName)}.units = munits.unit_id
       `;
 
       return {
@@ -681,7 +678,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}shopprojectrestockrecord`;
       await this.prismaService
-        .$queryRaw`DELETE * FROM ${tableName} WHERE record_id = ${dto.id}`;
+        .$queryRaw`DELETE * FROM ${Prisma.raw(tableName)} WHERE record_id = ${dto.id}`;
 
       return {
         statusCode: 200,
@@ -700,7 +697,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}shopprojecttakeoutrecord`;
       await this.prismaService
-        .$queryRaw`DELETE * FROM ${tableName} WHERE record_id = ${dto.id}`;
+        .$queryRaw`DELETE * FROM ${Prisma.raw(tableName)} WHERE record_id = ${dto.id}`;
 
       return {
         statusCode: 200,
@@ -756,7 +753,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}shopexpense`;
       const expense = await this.prismaService
-        .$queryRaw`SELECT expense_id, date, category, name, description, cost, balance, receipt_image, createdAt FROM ${tableName} WHERE expense_id = ${dto.expense_id}`;
+        .$queryRaw`SELECT expense_id, date, category, name, description, cost, balance, receipt_image, createdAt FROM ${Prisma.raw(tableName)} WHERE expense_id = ${dto.expense_id}`;
 
       return {
         statusCode: 200,
@@ -782,7 +779,7 @@ export class AppService {
             `${key} = ${typeof value === 'string' ? `'${value}'` : value}`,
         )
         .join(', ');
-      const sql = `UPDATE ${tableName} SET ${setParts} WHERE expense_id = ${expense_id}`;
+      const sql = `UPDATE ${Prisma.raw(tableName)} SET ${setParts} WHERE expense_id = ${expense_id}`;
 
       const result = await this.prismaService.$executeRawUnsafe(sql);
 
@@ -814,7 +811,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}shopexpense`;
       await this.prismaService
-        .$queryRaw`DELETE FROM ${tableName} WHERE expense_id = ${dto.id}`;
+        .$queryRaw`DELETE FROM ${Prisma.raw(tableName)} WHERE expense_id = ${dto.id}`;
 
       const newExpenseList = await this.getAllExpenses({ branch: dto.branch });
 
@@ -1265,7 +1262,7 @@ export class AppService {
       const promises = cartItems.map(
         async (item: { id: number; quantity: number; name: string }) => {
           const product = await this.prismaService
-            .$queryRaw`SELECT quantity FROM ${tableName} WHERE product_id = ${item.id}`;
+            .$queryRaw`SELECT quantity FROM ${Prisma.raw(tableName)} WHERE product_id = ${item.id}`;
           const qtyInStock = product[0]?.quantity || 0;
           if (qtyInStock >= item.quantity) {
             return Promise.resolve();
@@ -1292,13 +1289,13 @@ export class AppService {
 
       // If all items have sufficient stock, proceed to insert the sale
       await this.prismaService
-        .$executeRaw`INSERT INTO ${salesTable} (client_id, items, totalCost, payment_method) VALUES (${dto.client_id}, ${dto.items}, ${dto.total_amount}, ${dto.payment_method})`;
+        .$executeRaw`INSERT INTO ${Prisma.raw(salesTable)} (client_id, items, totalCost, payment_method) VALUES (${dto.client_id}, ${dto.items}, ${dto.total_amount}, ${dto.payment_method})`;
 
       // Update the stock quantities
       const updatePromises = cartItems.map(
         async (item: { id: number; quantity: number }) => {
           await this.prismaService
-            .$executeRaw`UPDATE ${tableName} SET quantity = quantity - ${item.quantity} WHERE product_id = ${item.id}`;
+            .$executeRaw`UPDATE ${Prisma.raw(tableName)} SET quantity = quantity - ${item.quantity} WHERE product_id = ${item.id}`;
         },
       );
 
@@ -1330,7 +1327,7 @@ export class AppService {
       const promises = cartItems.map(
         async (item: { id: number; quantity: number }) => {
           const product = await this.prismaService
-            .$queryRaw`SELECT quantity FROM ${tableName} WHERE project_id = ${item.id}`;
+            .$queryRaw`SELECT quantity FROM ${Prisma.raw(tableName)} WHERE project_id = ${item.id}`;
           const qtyInStock = product[0]?.quantity || 0;
           if (qtyInStock >= item.quantity) {
             return Promise.resolve();
@@ -1357,13 +1354,13 @@ export class AppService {
 
       // If all items have sufficient stock, proceed to insert the sale
       await this.prismaService
-        .$executeRaw`INSERT INTO ${salesTable} (client_id, items, totalCost, payment_method) VALUES (${dto.client_id}, ${dto.items}, ${dto.total_amount}, ${dto.payment_method})`;
+        .$executeRaw`INSERT INTO ${Prisma.raw(salesTable)} (client_id, items, totalCost, payment_method) VALUES (${dto.client_id}, ${dto.items}, ${dto.total_amount}, ${dto.payment_method})`;
 
       // Update the stock quantities
       const updatePromises = cartItems.map(
         async (item: { id: number; quantity: number }) => {
           await this.prismaService
-            .$executeRaw`UPDATE ${tableName} SET quantity = quantity - ${item.quantity} WHERE project_id = ${item.id}`;
+            .$executeRaw`UPDATE ${Prisma.raw(tableName)} SET quantity = quantity - ${item.quantity} WHERE project_id = ${item.id}`;
         },
       );
 
@@ -1388,7 +1385,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}shopsales`;
       const sale = await this.prismaService
-        .$queryRaw`SELECT * FROM ${tableName} WHERE sale_id = ${dto.id}`;
+        .$queryRaw`SELECT * FROM ${Prisma.raw(tableName)} WHERE sale_id = ${dto.id}`;
 
       return {
         statusCode: 200,
@@ -1413,7 +1410,7 @@ export class AppService {
         client_id: number;
         registeredAt: any;
       }[] = await this.prismaService
-        .$queryRaw`SELECT * FROM ${tableName} JOIN client ON ${tableName}.client_id = client.client_id`;
+        .$queryRaw`SELECT * FROM ${Prisma.raw(tableName)} JOIN client ON ${Prisma.raw(tableName)}.client_id = client.client_id`;
 
       const sortedSalesList = salesList.sort((a, b) => {
         const dateA = new Date(a.registeredAt).setHours(0, 0, 0, 0);
@@ -1444,7 +1441,7 @@ export class AppService {
         client_id: number;
         registeredAt: any;
       }[] = await this.prismaService
-        .$queryRaw`SELECT * FROM ${tableName} JOIN client ON ${tableName}.client_id = client.client_id`;
+        .$queryRaw`SELECT * FROM ${Prisma.raw(tableName)} JOIN client ON ${Prisma.raw(tableName)}.client_id = client.client_id`;
 
       const sortedSalesList = salesList.sort((a, b) => {
         const dateA = new Date(a.registeredAt).setHours(0, 0, 0, 0);
