@@ -186,7 +186,7 @@ model project {
 
 model munits {
   unit_id     Int      @id @default(autoincrement())
-  unit_name        String
+  unit_name   String
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt

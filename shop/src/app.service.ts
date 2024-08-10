@@ -135,18 +135,16 @@ export class AppService {
   async shopRestock(dto: saveProductInventoryRestockDto) {
     try {
       const items = JSON.parse(dto.items);
-
+      const tableName = `${dto.branch}shopinventory`;
+      const recordsTableName = `${dto.branch}shoprestockrecord`;
       const updatedPromises = items.map(
         async (item: {
           productId: number;
           quantity: string;
           units: number;
         }) => {
-          const tableName = `${dto.branch}shopinventory`;
-          const recordsTableName = `${dto.branch}shoprestockrecord`;
-
           const product: [] = await this.prismaService
-            .$queryRaw`SELECT * FROM ${tableName}  WHERE product_id = ${item.productId} AND units = ${item.units}`;
+            .$queryRaw`SELECT * FROM ${tableName} WHERE product_id = ${item.productId} AND units = ${item.units}`;
 
           if (product.length === 0) {
             await this.prismaService
@@ -187,6 +185,8 @@ export class AppService {
     try {
       const insufficientItems = [];
       const items = JSON.parse(dto.items);
+      const tableName = `${dto.branch}shopinventory`;
+      const recordsTableName = `${dto.branch}shopStocktakeoutrecord`;
 
       const promises = items.map(
         async (item: {
@@ -194,7 +194,6 @@ export class AppService {
           quantity: string;
           units: number;
         }) => {
-          const tableName = `${dto.branch}shopinventory`;
           const product = await this.prismaService
             .$queryRaw`SELECT * FROM ${tableName} WHERE product_id = ${item.productId} AND units = ${item.units}`;
           console.log(product);
@@ -217,8 +216,6 @@ export class AppService {
           data: insufficientItems,
         };
       }
-      const tableName = `${dto.branch}shopinventory`;
-      const recordsTableName = `${dto.branch}shopStocktakeoutrecord`;
       // Update the stock quantities
       const updatePromises = items.map(
         async (item: {
@@ -280,10 +277,7 @@ export class AppService {
       const tableName = `${dto.branch}shoprestockrecord`;
       const restockRecords = await this.prismaService.$queryRaw`
       SELECT * 
-      FROM ${tableName} 
-      JOIN product ON ${tableName}.items = product.product_id 
-      JOIN munits ON ${tableName}.units = munits.unit_id
-      ORDER BY ${tableName}.transaction_date DESC`;
+      FROM ${tableName} JOIN product ON ${tableName}.items = product.product_id JOIN munits ON ${tableName}.units = munits.unit_id ORDER BY ${tableName}.transaction_date DESC`;
 
       return {
         statusCode: 200,
@@ -305,10 +299,7 @@ export class AppService {
       const tableName = `${dto.branch}shopStocktakeoutrecord`;
       const depleteRecords = await this.prismaService.$queryRaw`
       SELECT * 
-      FROM ${tableName} 
-      JOIN product ON ${tableName}.items = product.product_id 
-      JOIN munits ON ${tableName}.units = munits.unit_id
-      ORDER BY ${tableName}.transaction_date DESC`;
+      FROM ${tableName} JOIN product ON ${tableName}.items = product.product_id JOIN munits ON ${tableName}.units = munits.unit_id ORDER BY ${tableName}.transaction_date DESC`;
 
       return {
         statusCode: 200,
@@ -486,6 +477,8 @@ export class AppService {
   async projectsRestock(dto: saveProjectInventoryRestockDto) {
     try {
       const items = JSON.parse(dto.items);
+      const tableName = `${dto.branch}projectsinventory`;
+      const recordsTableName = `${dto.branch}projectrestockrecord`;
 
       const updatedPromises = items.map(
         async (item: {
@@ -493,8 +486,6 @@ export class AppService {
           quantity: string;
           units: number;
         }) => {
-          const tableName = `${dto.branch}projectsinventory`;
-          const recordsTableName = `${dto.branch}projectrestockrecord`;
           const project: [] = await this.prismaService
             .$queryRaw`SELECT * FROM ${tableName}  WHERE project_id = ${item.productId} AND units = ${item.units}`;
 
@@ -537,14 +528,14 @@ export class AppService {
     try {
       const insufficientItems = [];
       const items = JSON.parse(dto.items);
-
+      const tableName = `${dto.branch}projectsinventory`;
+      const recordsTableName = `${dto.branch}projecttakeoutrecord`;
       const promises = items.map(
         async (item: {
           productId: number;
           quantity: string;
           units: number;
         }) => {
-          const tableName = `${dto.branch}projectsinventory`;
           const product = await this.prismaService
             .$queryRaw`SELECT * FROM ${tableName} WHERE project_id = ${item.productId} AND units = ${item.units}`;
           const qtyInStock = product[0]?.quantity || 0;
@@ -566,8 +557,7 @@ export class AppService {
           data: insufficientItems,
         };
       }
-      const tableName = `${dto.branch}projectsinventory`;
-      const recordsTableName = `${dto.branch}projecttakeoutrecord`;
+
       // Update the stock quantities
       const updatePromises = items.map(
         async (item: {
@@ -628,9 +618,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}projectrestockrecord`;
       const restockRecords: [] = await this.prismaService.$queryRaw`
-        SELECT * FROM ${tableName} 
-        JOIN project ON ${tableName}.items = project.project_id
-        JOIN munits ON ${tableName}.units = munits.unit_id
+        SELECT * FROM ${tableName} JOIN project ON ${tableName}.items = project.project_id JOIN munits ON ${tableName}.units = munits.unit_id
       `;
 
       return {
@@ -651,9 +639,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}projecttakeoutrecord`;
       const depleteRecords: [] = await this.prismaService.$queryRaw`
-        SELECT * FROM ${tableName} 
-        JOIN project ON ${tableName}.items = project.project_id
-        JOIN munits ON ${tableName}.units = munits.unit_id
+        SELECT * FROM ${tableName} JOIN project ON ${tableName}.items = project.project_id JOIN munits ON ${tableName}.units = munits.unit_id
       `;
 
       return {
