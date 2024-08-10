@@ -24,6 +24,7 @@ import {
 } from './dto/equatorial_shop.dto';
 import { PrismaService } from './prisma/prisma.service';
 import { IProduct } from './interfaces/product';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AppService {
@@ -718,8 +719,10 @@ export class AppService {
   /*expenditure*/
   async saveExpense(dto: saveExpenseDto) {
     const tableName = `${dto.branch}shopexpense`;
+    console.log('expense', tableName);
     await this.prismaService
-      .$executeRaw`INSERT INTO ${tableName} (date, category, name, description, cost, balance, payment_method, payment_status, receipt_image) VALUES (${new Date(dto.date)}, ${dto.category}, ${dto.name}, ${dto.description}, ${dto.cost}, ${dto.balance}, ${dto.payment_method}, ${dto.payment_status}, ${dto.receipt_image})`;
+      .$executeRaw`INSERT INTO ${Prisma.raw(tableName)} (date, category, name, description, cost, balance, payment_method, payment_status, receipt_image) VALUES (${new Date(dto.date)}, ${dto.category}, ${dto.name}, ${dto.description}, ${dto.cost}, ${dto.balance}, ${dto.payment_method}, ${dto.payment_status}, ${dto.receipt_image})`;
+
     const expenseList = await this.getAllExpenses({ branch: dto.branch });
 
     return {
@@ -733,7 +736,7 @@ export class AppService {
     try {
       const tableName = `${dto.branch}shopexpense`;
       const expensesList = await this.prismaService
-        .$queryRaw`SELECT expense_id, date, category, name, description, cost, balance, receipt_image, payment_method, createdAt FROM ${tableName} ORDER BY createdAt DESC`;
+        .$queryRaw`SELECT expense_id, date, category, name, description, cost, balance, receipt_image, payment_method, createdAt FROM ${Prisma.raw(tableName)} ORDER BY createdAt DESC`;
 
       return {
         statusCode: 200,
