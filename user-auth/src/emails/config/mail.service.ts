@@ -25,8 +25,8 @@ export class MailService {
     });
   }
 
-  async sendWelcomeEmail(name: string, to: string) {
-    const emailTemplate: string = generateWelcomeEmail(name);
+  async sendWelcomeEmail(name: string, to: string, generatedPwd: string) {
+    const emailTemplate: string = generateWelcomeEmail(name, generatedPwd);
     const mailOptions = {
       to,
       subject: 'Welcome To ProfBioresearch',

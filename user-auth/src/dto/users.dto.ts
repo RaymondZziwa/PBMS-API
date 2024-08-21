@@ -79,7 +79,6 @@ export class createUserDto {
     message:
       'Password must contain at least one lowercase letter, one uppercase letter, and one number',
   })
-  @IsNotEmpty()
   @IsString()
   password: string;
 
@@ -219,4 +218,58 @@ export class editUserInfoDto {
   })
   @IsString()
   new_password: string;
+}
+
+export class editUserDto {
+  @IsNumber()
+  @IsNotEmpty()
+  user_id: number;
+
+  @IsString()
+  first_name: string;
+
+  @IsString()
+  last_name: string;
+
+  @IsString()
+  gender: string;
+
+  @IsString()
+  nin_number: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  branch: string;
+
+  @IsString()
+  department: string;
+
+  @IsString()
+  role: string;
+
+  @IsString()
+  salary: string;
+
+  @IsDateString()
+  dob: Date;
+
+  @IsString()
+  contact1: string;
+
+  @IsString()
+  @IsOptional()
+  contact2?: string;
+
+  @IsOptional()
+  bankInfo: bankInfoDto;
+
+  @IsOptional()
+  educationInfo: educationInfoDto;
+
+  @IsOptional()
+  addressInfo: addressInfoDto;
+
+  createdAt: Date;
 }

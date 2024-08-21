@@ -4,9 +4,15 @@ import { BearerTokenExtractor } from './middleware/tokenExtractor.middleware';
 import { UsersController } from './users/users.controller';
 import { NatsClientModule } from './nats_client/nats.module';
 import { EquatorialShopModule } from './equatorial/shop/shop.module';
+import { SuperadminModule } from './admin/admin.module';
 
 @Module({
-  imports: [UsersModule, NatsClientModule, EquatorialShopModule],
+  imports: [
+    UsersModule,
+    NatsClientModule,
+    EquatorialShopModule,
+    SuperadminModule,
+  ],
   controllers: [UsersController],
   providers: [],
 })
