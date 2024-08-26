@@ -445,3 +445,58 @@ model masanafushopStocktakeoutrecord {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @default(now()) @updatedAt
 }
+
+model markettingEmail {
+  id        Int      @id @default(autoincrement())
+  subject   String
+  body      String
+  sent_at   DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model markettingSms {
+  id        Int      @id @default(autoincrement())
+  message   String
+  sent_at   DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model meeting {
+  id           Int      @id @default(autoincrement())
+  name         String
+  description  String?
+  meeting_date String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+}
+
+model events {
+  id               Int      @id @default(autoincrement())
+  name             String
+  description      String?
+  event_start_date String
+  event_end_date   String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+}
+
+model directory {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  doc         doc[]
+}
+
+model doc {
+  id                Int       @id @default(autoincrement())
+  directory         directory @relation(fields: [home_directory_id], references: [id])
+  home_directory_id Int
+  name              String
+  file_type         String
+
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+}

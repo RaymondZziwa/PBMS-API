@@ -30,7 +30,7 @@ export class UsersController {
     return new Observable((observer) => {
       isValid$.subscribe({
         next: (isValid) => {
-          if (isValid && role === 'admin') {
+          if (isValid && role === 'superadmin') {
             this.natsClient.send({ cmd: 'CREATE_USER' }, req.body).subscribe({
               next: (response) => {
                 observer.next(response);
@@ -134,7 +134,7 @@ export class UsersController {
     return new Observable((observer) => {
       isValid$.subscribe({
         next: (isValid) => {
-          if (isValid && role === 'admin') {
+          if (isValid && role === 'superadmin') {
             this.natsClient.send({ cmd: 'DELETE_USER' }, req.body).subscribe({
               next: (response) => {
                 observer.next(response);
