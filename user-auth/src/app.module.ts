@@ -9,9 +9,9 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from './prisma/prisma.service';
 import { MailService } from './emails/config/mail.service';
 import { JwtService } from '@nestjs/jwt';
-import { CacheModule } from '@nestjs/cache-manager';
-import { redisStore } from 'cache-manager-redis-yet';
-import { RedisCacheModule } from './cache/config/redis.module';
+//import { CacheModule } from '@nestjs/cache-manager';
+//import { redisStore } from 'cache-manager-redis-yet';
+//import { RedisCacheModule } from './cache/config/redis.module';
 import { accessKeyValidatorHelperService } from './helpers/accessKeyValidator.service';
 @Module({
   imports: [
@@ -20,13 +20,13 @@ import { accessKeyValidatorHelperService } from './helpers/accessKeyValidator.se
     }),
     PrismaModule,
     JwtTokenModule,
-    RedisCacheModule,
-    CacheModule.register({
-      store: redisStore,
-      url: 'redis://181.215.68.133:6379',
-      ttl: 1800000,
-      legacyMode: true,
-    }),
+    //RedisCacheModule,
+    // CacheModule.register({
+    //   store: redisStore,
+    //   url: 'redis://181.215.68.133:6379',
+    //   ttl: 1800000,
+    //   legacyMode: true,
+    // }),
   ],
   controllers: [AuthMicroserviceController],
   providers: [
