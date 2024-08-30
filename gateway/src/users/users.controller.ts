@@ -1,14 +1,13 @@
 import {
   Controller,
   Get,
-  HttpException,
-  HttpStatus,
   Inject,
   Post,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { Observable } from 'rxjs';
+import { lastValueFrom } from 'rxjs';
 
 @Controller('api/v1/')
 export class UsersController {
@@ -22,48 +21,19 @@ export class UsersController {
     //return this.natsClient.send({ cmd: 'CREATE_USER' }, req.body);
     const token = req['token'];
     const role = req['role'];
-    const isValid$ = this.natsClient.send<boolean>(
+    const isValid = this.natsClient.send<boolean>(
       { cmd: 'VALIDATE_TOKEN' },
       token,
     );
 
-    return new Observable((observer) => {
-      isValid$.subscribe({
-        next: (isValid) => {
-          if (isValid && role === 'superadmin') {
-            this.natsClient.send({ cmd: 'CREATE_USER' }, req.body).subscribe({
-              next: (response) => {
-                observer.next(response);
-                observer.complete();
-              },
-              error: () => {
-                observer.error(
-                  new HttpException(
-                    'Failed to create user.',
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                  ),
-                );
-              },
-            });
-          } else {
-            observer.error(
-              new HttpException(
-                'Unauthorized or invalid access token.',
-                HttpStatus.FORBIDDEN,
-              ),
-            );
-          }
-        },
-        error: () => {
-          observer.error(
-            new HttpException(
-              'Failed to validate token.',
-              HttpStatus.INTERNAL_SERVER_ERROR,
-            ),
-          );
-        },
-      });
-    });
+    if (isValid && role === 'superadmin') {
+      return await lastValueFrom(
+        this.natsClient.send({ cmd: 'CREATE_USER' }, req.body),
+      );
+    } else {
+      // Handle the case where the token is not valid
+      throw new UnauthorizedException('Invalid token');
+    }
   }
 
   //admin to get user info
@@ -71,48 +41,19 @@ export class UsersController {
   async getUser(@Req() req: Request) {
     const token = req['token'];
     const role = req['role'];
-    const isValid$ = this.natsClient.send<boolean>(
+    const isValid = this.natsClient.send<boolean>(
       { cmd: 'VALIDATE_TOKEN' },
       token,
     );
 
-    return new Observable((observer) => {
-      isValid$.subscribe({
-        next: (isValid) => {
-          if (isValid && role === 'admin') {
-            this.natsClient.send({ cmd: 'GET_USER' }, req.body).subscribe({
-              next: (response) => {
-                observer.next(response);
-                observer.complete();
-              },
-              error: () => {
-                observer.error(
-                  new HttpException(
-                    'Failed to create user.',
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                  ),
-                );
-              },
-            });
-          } else {
-            observer.error(
-              new HttpException(
-                'Unauthorized or invalid access token.',
-                HttpStatus.FORBIDDEN,
-              ),
-            );
-          }
-        },
-        error: () => {
-          observer.error(
-            new HttpException(
-              'Failed to validate token.',
-              HttpStatus.INTERNAL_SERVER_ERROR,
-            ),
-          );
-        },
-      });
-    });
+    if (isValid && role === 'superadmin') {
+      return await lastValueFrom(
+        this.natsClient.send({ cmd: 'GET_USER' }, req.body),
+      );
+    } else {
+      // Handle the case where the token is not valid
+      throw new UnauthorizedException('Invalid token');
+    }
   }
 
   //request access key
@@ -126,48 +67,19 @@ export class UsersController {
   async deleteUser(@Req() req: Request) {
     const token = req['token'];
     const role = req['role'];
-    const isValid$ = this.natsClient.send<boolean>(
+    const isValid = this.natsClient.send<boolean>(
       { cmd: 'VALIDATE_TOKEN' },
       token,
     );
 
-    return new Observable((observer) => {
-      isValid$.subscribe({
-        next: (isValid) => {
-          if (isValid && role === 'superadmin') {
-            this.natsClient.send({ cmd: 'DELETE_USER' }, req.body).subscribe({
-              next: (response) => {
-                observer.next(response);
-                observer.complete();
-              },
-              error: () => {
-                observer.error(
-                  new HttpException(
-                    'Failed to get all users.',
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                  ),
-                );
-              },
-            });
-          } else {
-            observer.error(
-              new HttpException(
-                'Unauthorized or invalid access token.',
-                HttpStatus.FORBIDDEN,
-              ),
-            );
-          }
-        },
-        error: () => {
-          observer.error(
-            new HttpException(
-              'Failed to validate token.',
-              HttpStatus.INTERNAL_SERVER_ERROR,
-            ),
-          );
-        },
-      });
-    });
+    if (isValid && role === 'superadmin') {
+      return await lastValueFrom(
+        this.natsClient.send({ cmd: 'DELETE_USER' }, req.body),
+      );
+    } else {
+      // Handle the case where the token is not valid
+      throw new UnauthorizedException('Invalid token');
+    }
   }
 
   //renew access token
@@ -201,53 +113,22 @@ export class UsersController {
   }
 
   //get-all-users
-  @Get('/all-users')
+  @Get('/get-all-users')
   async getAllUsers(@Req() req: Request) {
     const token = req['token'];
     const role = req['role'];
-    const isValid$ = this.natsClient.send<boolean>(
+    const isValid = this.natsClient.send<boolean>(
       { cmd: 'VALIDATE_TOKEN' },
       token,
     );
 
-    return new Observable((observer) => {
-      isValid$.subscribe({
-        next: (isValid) => {
-          if (isValid && role === 'admin') {
-            return this.natsClient
-              .send({ cmd: 'GET_ALL_USERS' }, req.body)
-              .subscribe({
-                next: (response) => {
-                  observer.next(response);
-                  observer.complete();
-                },
-                error: () => {
-                  observer.error(
-                    new HttpException(
-                      'Failed to get all users.',
-                      HttpStatus.INTERNAL_SERVER_ERROR,
-                    ),
-                  );
-                },
-              });
-          } else {
-            observer.error(
-              new HttpException(
-                'Unauthorized or invalid access token.',
-                HttpStatus.FORBIDDEN,
-              ),
-            );
-          }
-        },
-        error: () => {
-          observer.error(
-            new HttpException(
-              'Failed to validate token.',
-              HttpStatus.INTERNAL_SERVER_ERROR,
-            ),
-          );
-        },
-      });
-    });
+    if (isValid && role === 'superadmin') {
+      return await lastValueFrom(
+        this.natsClient.send({ cmd: 'GET_ALL_USERS' }, role),
+      );
+    } else {
+      // Handle the case where the token is not valid
+      throw new UnauthorizedException('Invalid token');
+    }
   }
 }

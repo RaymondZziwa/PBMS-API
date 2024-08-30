@@ -4,7 +4,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   createUserDto,
   deleteUserDto,
-  editUserInfoDto,
+  editUserDto,
   getUserDto,
   loginDto,
   loginWithAccessKeyDto,
@@ -80,18 +80,19 @@ export class AuthMicroserviceController {
   }
 
   @MessagePattern({ cmd: 'EDIT_USER_INFO' })
-  editUser(@Payload() data: editUserInfoDto) {
+  editUser(@Payload() data: editUserDto) {
     return this.authService.editUser(data);
   }
 
   @MessagePattern({ cmd: 'GET_ALL_USERS' })
   async getAllUsers() {
-    const cachedList: any = await this.redisService.getData('users_list');
-    if (cachedList) {
-      return JSON.parse(cachedList);
-    }
+    // const cachedList: any = await this.redisService.getData('users_list');
+    // console.log(cachedList)
+    // if (cachedList) {
+    //   return JSON.parse(cachedList);
+    // }
     const fetchedList = await this.authService.getAllUsers();
-    this.redisService.setData('users_list', JSON.stringify(fetchedList));
+    //this.redisService.setData('users_list', JSON.stringify(fetchedList.data));
     return fetchedList;
   }
 }

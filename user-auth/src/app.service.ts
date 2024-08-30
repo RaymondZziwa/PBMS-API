@@ -3,7 +3,7 @@ import { PrismaService } from './prisma/prisma.service';
 import {
   createUserDto,
   deleteUserDto,
-  editUserInfoDto,
+  editUserDto,
   getUserDto,
   loginDto,
   loginWithAccessKeyDto,
@@ -39,14 +39,21 @@ export class AuthMicroserviceService {
             'The email you are trying to register is already associated with an existing account.',
         };
       }
-      const userPassword = await bcrypt.hash(data.password, 12);
+      const generatedPwd = () => Math.random().toString(36).substring(2, 8);
+      const userPassword = await bcrypt.hash(generatedPwd(), 12);
       await this.prismaService
         .$queryRaw`INSERT INTO user (first_name, last_name, gender, nin_number, email, password, branch, department, role, salary, dob, contact1, contact2) VALUES (${data.first_name}, ${data.last_name}, ${data.gender}, ${data.nin_number}, ${data.email}, ${userPassword}, ${data.branch}, ${data.department}, ${data.role}, ${data.salary}, ${data.dob}, ${data.contact1}, ${data.contact2}) `;
-      this.mailService.sendWelcomeEmail(data.last_name, data.email);
+      this.mailService.sendWelcomeEmail(
+        data.last_name,
+        data.email,
+        generatedPwd(),
+      );
+      const updatedUsersList = await this.getAllUsers();
       return {
         statusCode: 201,
         message:
           'Account created successfully. New user can now log into the system.',
+        data: updatedUsersList.data,
       };
     } catch (error) {
       console.log('Error while creating user : ', error);
@@ -94,7 +101,6 @@ export class AuthMicroserviceService {
               'Hoooray!! We found you. Please wait a moment as we grant you access.',
             tokens: authTokens,
             last_name: last_name,
-            //email: user[0].email,
             userInfo: otherUserData,
           };
         }
@@ -170,6 +176,7 @@ export class AuthMicroserviceService {
           statusCode: 404,
           message:
             "We couldn't find an account associated with the email you provided.",
+          data: null,
         };
       }
     } catch (error) {
@@ -188,10 +195,7 @@ export class AuthMicroserviceService {
   //login using access key
   async loginWithAccessKey(data: loginWithAccessKeyDto) {
     const isAccessKeyValid: any =
-      await this.accessKeyValidatingHelper.validateAccessKey(
-        data.email,
-        data.accessKey,
-      );
+      await this.accessKeyValidatingHelper.validateAccessKey(data.email);
     if (isAccessKeyValid) {
       try {
         const user = await this.prismaService
@@ -241,20 +245,23 @@ export class AuthMicroserviceService {
 
   //delete user
   async deleteUser(data: deleteUserDto) {
+    console.log(data.user_id);
     const user: [] = await this.prismaService
       .$queryRaw`SELECT user_id FROM user WHERE user_id = ${data.user_id}`;
     try {
       if (user.length > 0) {
-        this.prismaService
-          .$queryRaw`DELETE FROM user WHERE user_id = ${data.user_id}`;
+        await this.prismaService
+          .$executeRaw`DELETE FROM user WHERE user_id = ${data.user_id}`;
+        const updatedUsersList = await this.getAllUsers();
         return {
           statusCode: 200,
           message: 'User has been successfully deleted.',
+          data: updatedUsersList.data,
         };
       }
       return {
         statusCode: 401,
-        message: 'No user account was found matching the provided user_id',
+        message: 'No user account was found.',
       };
     } catch (error) {
       console.log('Error while deleting user : ', error);
@@ -290,7 +297,7 @@ export class AuthMicroserviceService {
   async getAllUsers() {
     try {
       const users: [] = await this.prismaService
-        .$queryRaw`SELECT user.first_name, user.last_name, user.branch, user.department, user.role FROM user`;
+        .$queryRaw`SELECT user_id, first_name, last_name, gender, nin_number, email, branch, department, role, salary, dob, contact1, createdAt FROM user`;
 
       if (users.length > 0) {
         return {
@@ -314,103 +321,44 @@ export class AuthMicroserviceService {
     }
   }
 
-  async editUser(dto: editUserInfoDto) {
+  async editUser(dto: editUserDto) {
     try {
-      // Log the input DTO for debugging
-      console.log(dto);
+      const { user_id, ...updateData } = dto;
 
-      // Case 1: Update user by user_id
-      if (dto.user_id) {
-        // Retrieve the current user data based on user_id
-        const user: any[] = await this.prismaService
-          .$queryRaw`SELECT email, password FROM user WHERE user_id = ${dto.user_id}`;
+      const setParts = Object.entries(updateData)
+        .filter(
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          ([_, value]) => value !== null && value !== undefined && value !== '',
+        )
+        .map(
+          ([key, value]) =>
+            `${key} = ${typeof value === 'string' ? `'${value}'` : value}`,
+        )
+        .join(', ');
 
-        // Check if the user exists
-        if (user.length > 0) {
-          // Case 1.1: Only update email
-          if (dto.email && !dto.new_password) {
-            await this.prismaService
-              .$executeRaw`UPDATE user SET email = ${dto.email} WHERE user_id = ${dto.user_id}`;
-            return {
-              statusCode: 200,
-              message: 'User email updated successfully.',
-              data: null,
-            };
+      const sql = `UPDATE user SET ${setParts} WHERE user_id = ${user_id}`;
 
-            // Case 1.2: Only update password
-          } else if (!dto.email && dto.new_password) {
-            const newPassword = await bcrypt.hash(dto.new_password, 12);
-            await this.prismaService
-              .$executeRaw`UPDATE user SET password = ${newPassword} WHERE user_id = ${dto.user_id}`;
-            return {
-              statusCode: 200,
-              message: 'User password updated successfully.',
-              data: null,
-            };
+      const result = await this.prismaService.$executeRawUnsafe(sql);
 
-            // Case 1.3: Update both email and password
-          } else if (dto.email && dto.new_password) {
-            const newPassword = await bcrypt.hash(dto.new_password, 12);
-            await this.prismaService
-              .$executeRaw`UPDATE user SET email = ${dto.email}, password = ${newPassword} WHERE user_id = ${dto.user_id}`;
-            return {
-              statusCode: 200,
-              message: 'User email and password updated successfully.',
-              data: null,
-            };
-          } else {
-            // No fields to update
-            return {
-              statusCode: 400,
-              message: 'No valid fields provided for update.',
-              data: null,
-            };
-          }
-        } else {
-          // User with the given user_id does not exist
-          return {
-            statusCode: 404,
-            message: 'User not found.',
-            data: null,
-          };
-        }
-
-        // Case 2: When user_id is not provided
-      } else if (dto.email) {
-        // Check if a user with the provided email already exists
-        const existingUser: [] = await this.prismaService
-          .$queryRaw`SELECT email FROM user WHERE email = ${dto.email}`;
-
-        if (existingUser.length > 0) {
-          // Email already exists
-          return {
-            statusCode: 409,
-            message: 'Email is already in use.',
-            data: null,
-          };
-        } else {
-          // No user exists with the provided email
-          return {
-            statusCode: 404,
-            message: 'No user found with the given email.',
-            data: null,
-          };
-        }
-      } else {
-        // Neither user_id nor email is provided
+      if (result === 0) {
         return {
-          statusCode: 400,
-          message: 'No user_id or email provided.',
-          data: null,
+          statusCode: 404,
+          message: 'User not found',
         };
       }
+
+      const updatedUserList = await this.getAllUsers();
+
+      return {
+        statusCode: 200,
+        message: 'User updated successfully',
+        data: updatedUserList.data,
+      };
     } catch (error) {
-      console.log('Error while editing user: ', error);
       return {
         statusCode: 500,
-        message:
-          "Internal server error. Can't perform this action. Contact system support for assistance.",
-        data: null,
+        message: 'Error while updating user information',
+        data: error,
       };
     }
   }
@@ -418,12 +366,13 @@ export class AuthMicroserviceService {
   //reset password
   async resetPassword(data: resetPasswordDto) {
     try {
+      console.log('data', data);
       const user: [] = await this.prismaService
         .$queryRaw`SELECT user_id FROM user WHERE email = ${data.email}`;
       if (user.length > 0) {
         const newPasswordHash = await bcrypt.hash(data.new_password, 12);
         await this.prismaService
-          .$queryRaw`UPDATE user SET password = ${newPasswordHash} WHERE user_id = ${user}`;
+          .$queryRaw`UPDATE user SET password = ${newPasswordHash} WHERE email = ${data.email}`;
         return {
           statusCode: 200,
           message: `Your password has been successfully reset.`,
