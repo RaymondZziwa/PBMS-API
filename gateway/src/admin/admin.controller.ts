@@ -4,11 +4,11 @@ import {
   Inject,
   Post,
   Req,
-  UseInterceptors,
-  UploadedFile,
+  // UseInterceptors,
+  // UploadedFile,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { FileInterceptor } from '@nestjs/platform-express';
+//import { FileInterceptor } from '@nestjs/platform-express';
 //import { BearerTokenExtractor } from 'src/middleware/tokenExtractor.middleware';
 
 @Controller('api/v1/')
@@ -91,22 +91,22 @@ export class AdminController {
     return this.natsClient.send({ cmd: 'GET_ALL_DIRECTORIES' }, req.body);
   }
   //docs
-  @Post('/upload-document')
-  @UseInterceptors(FileInterceptor('file'))
-  uploadDocument(
-    @UploadedFile() file: Express.Multer.File,
-    @Req() req: Request,
-  ) {
-    if (file) {
-      return this.natsClient.send({ cmd: 'UPLOAD_DOC' }, req.body);
-    } else {
-      return {
-        statusCode: 400,
-        message: 'No file uploaded',
-        data: null,
-      };
-    }
-  }
+  // @Post('/upload-document')
+  // @UseInterceptors(FileInterceptor('file'))
+  // uploadDocument(
+  //   @UploadedFile() file: Express.Multer.File,
+  //   @Req() req: Request,
+  // ) {
+  //   if (file) {
+  //     return this.natsClient.send({ cmd: 'UPLOAD_DOC' }, req.body);
+  //   } else {
+  //     return {
+  //       statusCode: 400,
+  //       message: 'No file uploaded',
+  //       data: null,
+  //     };
+  //   }
+  // }
 
   @Post('/update-document')
   updateDocument(@Req() req: Request) {
