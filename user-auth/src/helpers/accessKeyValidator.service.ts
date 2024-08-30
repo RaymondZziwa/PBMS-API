@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { RedisService } from 'src/cache/config/redis.service';
+//import { RedisService } from 'src/cache/config/redis.service';
 
 @Injectable()
 export class accessKeyValidatorHelperService {
-  constructor(private readonly redisService: RedisService) {}
+  //constructor(private readonly redisService: RedisService) {}
 
   tempStorage = new Map();
 
