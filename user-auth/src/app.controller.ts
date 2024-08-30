@@ -5,7 +5,7 @@ import {
   createUserDto,
   deleteUserDto,
   editUserDto,
-  getUserDto,
+  //getUserDto,
   loginDto,
   loginWithAccessKeyDto,
   renewAccessTokenDto,
@@ -13,13 +13,13 @@ import {
   resetPasswordDto,
   validateTokenDto,
 } from './dto/users.dto';
-import { RedisService } from './cache/config/redis.service';
+//import { RedisService } from './cache/config/redis.service';
 
 @Controller()
 export class AuthMicroserviceController {
   constructor(
     private readonly authService: AuthMicroserviceService,
-    private redisService: RedisService,
+    //private redisService: RedisService,
   ) {}
 
   @MessagePattern({ cmd: 'VALIDATE_TOKEN' })
@@ -33,22 +33,21 @@ export class AuthMicroserviceController {
   }
 
   @MessagePattern({ cmd: 'GET_USER' })
-  async getUser(@Payload() data: getUserDto) {
-    const cachedUser: any = await this.redisService.getData(
-      data.user_id.toString(),
-    );
+  // async getUser(@Payload() data: getUserDto) {
+  //   const cachedUser: any = await this.redisService.getData(
+  //     data.user_id.toString(),
+  //   );
 
-    if (cachedUser) {
-      return JSON.parse(cachedUser);
-    }
-    const fetchedUser = await this.authService.getUser(data);
-    this.redisService.setData(
-      data.user_id.toString(),
-      JSON.stringify(fetchedUser),
-    );
-    return fetchedUser;
-  }
-
+  //   if (cachedUser) {
+  //     return JSON.parse(cachedUser);
+  //   }
+  //   const fetchedUser = await this.authService.getUser(data);
+  //   this.redisService.setData(
+  //     data.user_id.toString(),
+  //     JSON.stringify(fetchedUser),
+  //   );
+  //   return fetchedUser;
+  // }
   @MessagePattern({ cmd: 'REQUEST_ACCESS_KEY' })
   requestUserAccessKey(@Payload() data: requestUserAccessKeyDto) {
     return this.authService.requestUserAccessKey(data);
