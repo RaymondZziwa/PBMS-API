@@ -171,6 +171,7 @@ model product {
   updatedAt                     DateTime                  @default(now()) @updatedAt
   equatorialshopinventory                equatorialshopinventory[]
   masanafushopinventory                masanafushopinventory[]
+  masanafugeneralstoreinventory       masanafugeneralstoreinventory[]
 }
 
 model project {
@@ -499,4 +500,34 @@ model doc {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
+}
+
+model masanafugeneralstoreinventory {
+  inventory_id Int     @id @default(autoincrement())
+  product      product @relation(fields: [product_id], references: [product_id])
+  product_id   Int
+  quantity     Float
+  units        Int
+}
+
+model masanafugeneralstorerestockrecord {
+  record_id        Int      @id @default(autoincrement())
+  items            String
+  source           String
+  notes            String?
+  transaction_date DateTime
+  authorized_by    String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+}
+
+model masanafugeneralstoreStocktakeoutrecord {
+  record_id        Int      @id @default(autoincrement())
+  items            String
+  transaction_date DateTime
+  destination      String
+  authorized_by    String
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
 }
