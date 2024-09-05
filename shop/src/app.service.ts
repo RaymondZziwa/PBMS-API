@@ -377,7 +377,7 @@ export class AppService {
   /*projects inventory*/
   async registerProject(dto: registerProjectDto) {
     try {
-      const ISBN_code = Math.floor(Math.random() * 10000000000000);
+      const ISBN_code = await generateEAN13();
       await this.prismaService
         .$queryRaw`INSERT INTO project (name, price, barcode) VALUES (${dto.name}, ${dto.price}, ${ISBN_code})`;
 
