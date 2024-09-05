@@ -1,21 +1,23 @@
-function calculateCheckDigit(barcode: string): number {
-  const digits = barcode.split('').map(Number);
-  const oddSum = digits
-    .filter((_, i) => i % 2 === 0)
-    .reduce((acc, curr) => acc + curr, 0);
-  const evenSum = digits
-    .filter((_, i) => i % 2 !== 0)
-    .reduce((acc, curr) => acc + curr * 3, 0);
-  const totalSum = oddSum + evenSum;
-  const checkDigit = (10 - (totalSum % 10)) % 10;
-  return checkDigit;
-}
+import * as bwipjs from 'bwip-js';
 
-// Function to generate a valid EAN-13 barcode
-export function generateEAN13(): string {
+export async function generateEAN13(): Promise<string> {
   const baseBarcode = Math.floor(Math.random() * 1000000000000)
     .toString()
-    .padStart(12, '0'); // Generate a 12-digit random number
-  const checkDigit = calculateCheckDigit(baseBarcode);
-  return baseBarcode + checkDigit; // Append the check digit to make a valid 13-digit EAN-13 barcode
+    .padStart(12, '0'); // Ensure it's 12 digits
+
+  try {
+    // Generate a valid EAN-13 barcode number using bwip-js (bwip-js calculates the check digit)
+    const barcodeBuffer = await bwipjs.toBuffer({
+      bcid: 'ean13', // Barcode type
+      text: baseBarcode, // 12-digit base (bwip-js will append the check digit)
+      includetext: false, // We don't need the image or human-readable text
+    });
+
+    // Return the 12-digit base (bwip-js calculates the check digit and appends it)
+    const fullBarcode = baseBarcode + barcodeBuffer.slice(-1).toString(); // Append check digit
+    return fullBarcode;
+  } catch (error) {
+    console.error('Error generating EAN-13 barcode:', error);
+    throw error;
+  }
 }
