@@ -25,6 +25,7 @@ import {
 import { PrismaService } from './prisma/prisma.service';
 import { IProduct } from './interfaces/product';
 import { Prisma } from '@prisma/client';
+import { generateEAN13 } from './helpers/barcode_generator';
 
 @Injectable()
 export class AppService {
@@ -33,7 +34,7 @@ export class AppService {
   /*shop products inventory*/
   async registerProduct(dto: registerProductDto) {
     try {
-      const ISBN_code = Math.floor(Math.random() * 10000000000000);
+      const ISBN_code = generateEAN13();
       await this.prismaService
         .$queryRaw`INSERT INTO product (name, price, barcode, category_id) VALUES (${dto.name}, ${dto.price}, ${ISBN_code}, ${dto.category_id})`;
 
