@@ -273,6 +273,55 @@ export class equatorialShopController {
   }
 
   //massage
+  @Post('/restock-massage-store')
+  restockMassageStore(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'RESTOCK_GENERAL_STORE' }, req.body);
+  }
+
+  @Post('/deplete-massage-store')
+  depleteMassageStore(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'RELEASE_INVENTORY' }, req.body);
+  }
+
+  @Post('/get-massage-restock-records')
+  getMassageRestockRecords(@Req() req: Request) {
+    return this.natsClient.send(
+      { cmd: 'GET_GENERAL_STORE_RESTOCK_RECORDS' },
+      req.body,
+    );
+  }
+
+  @Post('/get-massage-deplete-records')
+  getMassageDepleteRecords(@Req() req: Request) {
+    return this.natsClient.send(
+      { cmd: 'GET_GENERAL_STORE_STOCK_RELEASE_RECORDS' },
+      req.body,
+    );
+  }
+
+  @Post('/save-sale')
+  saveMassageSale(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'SAVE_MASSAGE_SALE' }, req.body);
+  }
+
+  @Post('/submit-income')
+  saveIncomeSubmission(@Req() req: Request) {
+    return this.natsClient.send(
+      { cmd: 'SAVE_MASSAGE_INCOME_SUBMISSION' },
+      req.body,
+    );
+  }
+
+  @Post('/get-massage-reports')
+  getMassageReports(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_MASSAGE_REPORTS' }, req.body);
+  }
+
+  @Post('/get-massage-sale-records')
+  getMassageSaleRecords(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GET_MASSAGE_SALE_RECORDS' }, req.body);
+  }
+
   @Post('/decline-income-entry')
   declineEntry(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'DECLINE_ENTRY' }, req.body);
@@ -375,5 +424,40 @@ export class equatorialShopController {
   @Post('/get-saffron-standings')
   getSaffronStandings(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_SAFFRON_STANDINGS' }, req.body);
+  }
+
+  //general store
+  @Post('/restock-gs')
+  restockGS(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'RESTOCK_GENERAL_STORE' }, req.body);
+  }
+
+  @Post('/release-items')
+  releaseGSInventory(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'RELEASE_INVENTORY' }, req.body);
+  }
+
+  @Post('/get-gs-restock-records')
+  getGSRestockRecords(@Req() req: Request) {
+    return this.natsClient.send(
+      { cmd: 'GET_GENERAL_STORE_RESTOCK_RECORDS' },
+      req.body,
+    );
+  }
+
+  @Post('/get-gs-release-records')
+  getGSReleaseRecords(@Req() req: Request) {
+    return this.natsClient.send(
+      { cmd: 'GET_GENERAL_STORE_STOCK_RELEASE_RECORDS' },
+      req.body,
+    );
+  }
+
+  @Post('/get-gs-stock-levels')
+  getGSStockLevels(@Req() req: Request) {
+    return this.natsClient.send(
+      { cmd: 'GET_GENERAL_STORE_STOCK_LEVELS' },
+      req.body,
+    );
   }
 }

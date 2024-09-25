@@ -5,10 +5,13 @@ import {
   deleteSaffronSaleDto,
   editClientDto,
   editSupplierDto,
+  generalStoreInventoryReleaseDto,
+  generalStoreInventoryRestockDto,
   genericAddDto,
   genericEditDto,
   genericFindDto,
   getBranchDataDto,
+  getGeneralStoreStockLevelsDto,
   registerProductDto,
   registerProjectDto,
   reportDto,
@@ -369,5 +372,33 @@ export class AppController {
   @MessagePattern({ cmd: 'GET_MONTH_PROJECTS_SALES_REPORT' })
   async getMonthProjectSalesReport(@Payload() data: reportDto) {
     return this.appService.getMonthProjectsSalesReport(data);
+  }
+
+  //general store
+  @MessagePattern({ cmd: 'RESTOCK_GENERAL_STORE' })
+  async restockGeneralStore(@Payload() data: generalStoreInventoryRestockDto) {
+    return this.appService.restockGeneralStore(data);
+  }
+
+  @MessagePattern({ cmd: 'RELEASE_INVENTORY' })
+  async releaseInventory(@Payload() data: generalStoreInventoryReleaseDto) {
+    return this.appService.releaseGeneralStoreInventory(data);
+  }
+
+  @MessagePattern({ cmd: 'GET_GENERAL_STORE_RESTOCK_RECORDS' })
+  async getGSRestockRecords(@Payload() data: getGeneralStoreStockLevelsDto) {
+    return this.appService.getGeneralStoreRestockRecords(data);
+  }
+
+  @MessagePattern({ cmd: 'GET_GENERAL_STORE_STOCK_RELEASE_RECORDS' })
+  async getGSStockReleaseRecords(
+    @Payload() data: getGeneralStoreStockLevelsDto,
+  ) {
+    return this.appService.getGeneralStoreReleaseRecords(data);
+  }
+
+  @MessagePattern({ cmd: 'GET_GENERAL_STORE_STOCK_LEVELS' })
+  async getGSStockLevels(@Payload() data: getGeneralStoreStockLevelsDto) {
+    return this.appService.getGeneralStoreStockLevels(data);
   }
 }
