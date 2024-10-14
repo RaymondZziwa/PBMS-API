@@ -427,17 +427,17 @@ export class equatorialShopController {
   }
 
   //general store
-  @Post('/restock-gs')
+  @Post('/restock-general-store')
   restockGS(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'RESTOCK_GENERAL_STORE' }, req.body);
   }
 
-  @Post('/release-items')
+  @Post('/deplete-general-store')
   releaseGSInventory(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'RELEASE_INVENTORY' }, req.body);
   }
 
-  @Post('/get-gs-restock-records')
+  @Post('/general-store-restock-records')
   getGSRestockRecords(@Req() req: Request) {
     return this.natsClient.send(
       { cmd: 'GET_GENERAL_STORE_RESTOCK_RECORDS' },
@@ -445,7 +445,7 @@ export class equatorialShopController {
     );
   }
 
-  @Post('/get-gs-release-records')
+  @Post('/general-store-deplete-records')
   getGSReleaseRecords(@Req() req: Request) {
     return this.natsClient.send(
       { cmd: 'GET_GENERAL_STORE_STOCK_RELEASE_RECORDS' },
@@ -453,7 +453,7 @@ export class equatorialShopController {
     );
   }
 
-  @Post('/get-gs-stock-levels')
+  @Post('/general-store-stock-taking')
   getGSStockLevels(@Req() req: Request) {
     return this.natsClient.send(
       { cmd: 'GET_GENERAL_STORE_STOCK_LEVELS' },

@@ -1899,7 +1899,7 @@ export class AppService {
       const insufficientItems = [];
       const items = JSON.parse(dto.items);
       const tableName = `${dto.branch}generalstoreinventory`;
-      const recordsTableName = `${dto.branch}generalstorerestockrecords`;
+      const recordsTableName = `${dto.branch}generalstoredepleterecords`;
 
       const promises = items.map(
         async (item: {
@@ -1986,7 +1986,7 @@ export class AppService {
 
   async getGeneralStoreReleaseRecords(dto: getGeneralStoreStockLevelsDto) {
     try {
-      const tableName = `${dto.branch}generalstorereleaserecords`;
+      const tableName = `${dto.branch}generalstoredepleterecords`;
       const releaseRecords: [] = await this.prismaService.$queryRaw`
         SELECT * FROM ${Prisma.raw(tableName)} JOIN product ON ${Prisma.raw(tableName)}.items = product.product_id JOIN munits ON ${Prisma.raw(tableName)}.units = munits.unit_id
       `;
