@@ -3,10 +3,13 @@ import {
   deleteSaffronSaleDto,
   editClientDto,
   editSupplierDto,
+  generalStoreInventoryReleaseDto,
+  generalStoreInventoryRestockDto,
   genericAddDto,
   genericEditDto,
   genericFindDto,
   getBranchDataDto,
+  getGeneralStoreStockLevelsDto,
   registerProductDto,
   registerProjectDto,
   reportDto,
@@ -1836,6 +1839,186 @@ export class AppService {
       return {
         statusCode: 500,
         message: 'Error while getting standings',
+        data: error,
+      };
+    }
+  }
+
+  //general store
+  async restockGeneralStore(dto: generalStoreInventoryRestockDto) {
+    try {
+      const items = JSON.parse(dto.items);
+      const tableName = `${dto.branch}generalstoreinventory`;
+      const recordsTableName = `${dto.branch}generalstorerestockrecords`;
+
+      const updatedPromises = items.map(
+        async (item: {
+          productId: number;
+          quantity: string;
+          units: number;
+        }) => {
+          const product: [] = await this.prismaService
+            .$queryRaw`SELECT * FROM ${Prisma.raw(tableName)} WHERE product_id = ${item.productId} AND units = ${item.units}`;
+
+          if (product.length === 0) {
+            await this.prismaService
+              .$executeRaw`INSERT INTO ${Prisma.raw(tableName)} (product_id, quantity, units) VALUES (${item.productId}, ${item.quantity}, ${item.units})`;
+            await this.prismaService
+              .$executeRaw`INSERT INTO ${Prisma.raw(recordsTableName)} (items, quantity, units, source, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.source}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
+          } else {
+            await this.prismaService
+              .$executeRaw`UPDATE ${Prisma.raw(tableName)} SET quantity = quantity + ${parseFloat(item.quantity)} WHERE project_id = ${item.productId} AND units = ${item.units}`;
+            await this.prismaService
+              .$executeRaw`INSERT INTO ${Prisma.raw(recordsTableName)} (items, quantity, units, source, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.source}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
+          }
+        },
+      );
+
+      await Promise.all(updatedPromises);
+
+      const updatedRecords = await this.getGeneralStoreRestockRecords({
+        branch: dto.branch,
+      });
+
+      return {
+        statusCode: 200,
+        message: 'General store restock successful',
+        data: updatedRecords,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while restocking general store',
+        data: error,
+      };
+    }
+  }
+
+  async releaseGeneralStoreInventory(dto: generalStoreInventoryReleaseDto) {
+    try {
+      const insufficientItems = [];
+      const items = JSON.parse(dto.items);
+      const tableName = `${dto.branch}generalstoreinventory`;
+      const recordsTableName = `${dto.branch}generalstoredepleterecords`;
+
+      const promises = items.map(
+        async (item: {
+          productId: number;
+          quantity: string;
+          units: number;
+        }) => {
+          const product = await this.prismaService
+            .$queryRaw`SELECT * FROM ${Prisma.raw(tableName)} WHERE product_id = ${item.productId} AND units = ${item.units}`;
+          const qtyInStock = product[0]?.quantity || 0;
+          if (qtyInStock >= parseFloat(item.quantity)) {
+            return Promise.resolve();
+          } else {
+            insufficientItems.push(item.productId);
+            return Promise.reject();
+          }
+        },
+      );
+
+      await Promise.all(promises);
+      // If any item had insufficient stock, return here
+      if (insufficientItems.length > 0) {
+        return {
+          statusCode: 400,
+          message: 'Insufficient stock for some items',
+          data: insufficientItems,
+        };
+      }
+      // Update the stock quantities
+      const updatePromises = items.map(
+        async (item: {
+          productId: number;
+          quantity: string;
+          units: number;
+        }) => {
+          await this.prismaService
+            .$executeRaw`UPDATE ${Prisma.raw(tableName)} SET quantity = quantity - ${parseFloat(item.quantity)} WHERE product_id = ${item.productId}`;
+          await this.prismaService
+            .$queryRaw`INSERT INTO ${Prisma.raw(recordsTableName)} (items, quantity, units, destination, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.destination}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
+        },
+      );
+
+      // Wait for all stock updates to complete
+      await Promise.all(updatePromises);
+
+      const updatedRecords = await this.getGeneralStoreReleaseRecords({
+        branch: dto.branch,
+      });
+
+      return {
+        statusCode: 200,
+        message: 'Products have been succcessfully released',
+        data: updatedRecords,
+      };
+    } catch (error) {
+      console.log(error);
+      return {
+        statusCode: 500,
+        message: 'Error while releasing products',
+        data: error,
+      };
+    }
+  }
+
+  async getGeneralStoreRestockRecords(dto: getGeneralStoreStockLevelsDto) {
+    try {
+      const tableName = `${dto.branch}generalstorerestockrecords`;
+      const restockRecords: [] = await this.prismaService.$queryRaw`
+        SELECT * FROM ${Prisma.raw(tableName)} JOIN product ON ${Prisma.raw(tableName)}.items = product.product_id JOIN munits ON ${Prisma.raw(tableName)}.units = munits.unit_id
+      `;
+      return {
+        statusCode: 200,
+        message: 'General store restock data have been fetched',
+        data: restockRecords,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while fetching general store restocking data',
+        data: error,
+      };
+    }
+  }
+
+  async getGeneralStoreReleaseRecords(dto: getGeneralStoreStockLevelsDto) {
+    try {
+      const tableName = `${dto.branch}generalstoredepleterecords`;
+      const releaseRecords: [] = await this.prismaService.$queryRaw`
+        SELECT * FROM ${Prisma.raw(tableName)} JOIN product ON ${Prisma.raw(tableName)}.items = product.product_id JOIN munits ON ${Prisma.raw(tableName)}.units = munits.unit_id
+      `;
+      return {
+        statusCode: 200,
+        message: 'General store release data have been fetched',
+        data: releaseRecords,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while fetching general store inventory release data',
+        data: error,
+      };
+    }
+  }
+
+  async getGeneralStoreStockLevels(dto: getGeneralStoreStockLevelsDto) {
+    try {
+      const tableName = `${dto.branch}generalstoreinventory`;
+      const stockData = await this.prismaService
+        .$queryRaw`SELECT * FROM ${Prisma.raw(tableName)} JOIN product ON ${Prisma.raw(tableName)}.product_id = product.product_id JOIN munits ON ${Prisma.raw(tableName)}.units = munits.unit_id`;
+
+      return {
+        statusCode: 200,
+        message: 'Inventory stock levels have been fetched',
+        data: stockData,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Error while getting general store stock levels',
         data: error,
       };
     }

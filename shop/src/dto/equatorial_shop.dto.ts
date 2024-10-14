@@ -569,3 +569,61 @@ export class deleteSaffronSaleDto {
   @IsNotEmpty()
   points: number;
 }
+
+export class getGeneralStoreStockLevelsDto {
+  @IsNotEmpty()
+  @IsString()
+  branch: string;
+}
+
+export class generalStoreInventoryRestockDto {
+  @IsNotEmpty()
+  @IsString()
+  branch: string;
+
+  @IsNotEmpty()
+  @IsString()
+  items: string;
+
+  @IsNotEmpty()
+  @IsString()
+  source;
+
+  @IsString()
+  @IsNotEmpty()
+  notes;
+
+  @IsDateString()
+  @IsNotEmpty()
+  transaction_date;
+
+  @IsString()
+  @IsNotEmpty()
+  authorized_by;
+}
+
+export class generalStoreInventoryReleaseDto {
+  @IsNotEmpty()
+  @IsString()
+  branch: string;
+
+  @IsNotEmpty()
+  @IsString()
+  items: string;
+
+  @IsNotEmpty()
+  @IsString()
+  destination;
+
+  @IsString()
+  @IsNotEmpty()
+  notes;
+
+  @IsDateString()
+  @IsNotEmpty()
+  transaction_date;
+
+  @IsString()
+  @IsNotEmpty()
+  authorized_by;
+}
