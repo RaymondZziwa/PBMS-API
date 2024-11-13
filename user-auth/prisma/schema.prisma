@@ -13,6 +13,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model employee_attendance {
+  id          Int      @id @default(autoincrement())
+  user      user@relation(fields: [user_id], references: [user_id])
+  user_id  Int
+  time_in   DateTime?
+  time_out DateTime?
+  created_at DateTime       @default(now())
+}
+
 model user {
   user_id       Int            @id @default(autoincrement())
   first_name    String
@@ -33,6 +42,8 @@ model user {
   addressinfo   addressinfo?
   createdAt     DateTime       @default(now())
   userSessions  userSessions[]
+
+  employee_attendance employee_attendance[]
 }
 
 model userSessions {

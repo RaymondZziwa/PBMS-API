@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
 import {
+  clockInDto,
+  clockOutDto,
   createUserDto,
   deleteUserDto,
   editUserDto,
@@ -15,6 +17,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtTokenService } from './jwt/jwt.service';
 import { MailService } from './emails/config/mail.service';
 import { accessKeyValidatorHelperService } from './helpers/accessKeyValidator.service';
+import { generateEAN13 } from './helpers/code_generator';
 @Injectable()
 export class AuthMicroserviceService {
   constructor(
@@ -39,10 +42,11 @@ export class AuthMicroserviceService {
             'The email you are trying to register is already associated with an existing account.',
         };
       }
+      const card_code = await generateEAN13();
       const generatedPwd = () => Math.random().toString(36).substring(2, 8);
       const userPassword = await bcrypt.hash(generatedPwd(), 12);
       await this.prismaService
-        .$queryRaw`INSERT INTO user (first_name, last_name, gender, nin_number, email, password, branch, department, role, salary, dob, contact1, contact2) VALUES (${data.first_name}, ${data.last_name}, ${data.gender}, ${data.nin_number}, ${data.email}, ${userPassword}, ${data.branch}, ${data.department}, ${data.role}, ${data.salary}, ${data.dob}, ${data.contact1}, ${data.contact2}) `;
+        .$queryRaw`INSERT INTO user (first_name, last_name, gender, nin_number, email, password, branch, department, role, salary, dob, contact1, contact2, card_no) VALUES (${data.first_name}, ${data.last_name}, ${data.gender}, ${data.nin_number}, ${data.email}, ${userPassword}, ${data.branch}, ${data.department}, ${data.role}, ${data.salary}, ${data.dob}, ${data.contact1}, ${data.contact2}, ${card_code}) `;
       this.mailService.sendWelcomeEmail(
         data.last_name,
         data.email,
@@ -321,6 +325,32 @@ export class AuthMicroserviceService {
     }
   }
 
+  async genericGetUsers() {
+    try {
+      const users: [] = await this.prismaService
+        .$queryRaw`SELECT user_id, first_name, last_name, branch, department, role, salary, dob, contact1, createdAt FROM user`;
+
+      if (users.length > 0) {
+        return {
+          statusCode: 200,
+          message: 'Users successfully fetched',
+          data: users,
+        };
+      }
+      return {
+        statusCode: 404,
+        message: 'No users found',
+        data: users,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message:
+          "Internal server error. Can't perform this action. Contact system support for assistance.",
+      };
+    }
+  }
+
   async editUser(dto: editUserDto) {
     try {
       const { user_id, ...updateData } = dto;
@@ -380,6 +410,115 @@ export class AuthMicroserviceService {
       }
     } catch (error) {
       console.log('Error while resetting user password : ', error);
+      return {
+        statusCode: 500,
+        message:
+          "Internal server error. Can't perform this action. Contact system support for assistance.",
+      };
+    }
+  }
+
+  async employeeClockIn(data: clockInDto) {
+    try {
+      const existingEntry: [] = await this.prismaService.$queryRaw`
+        SELECT * FROM attendance_logs 
+        WHERE user_id = ${data.user_id} 
+        AND log_date = ${data.log_date} 
+        AND time_in IS NOT NULL
+      `;
+
+      if (existingEntry.length > 0) {
+        return {
+          statusCode: 400,
+          message: 'You have already clocked in for today.',
+        };
+      }
+
+      const entry = await this.prismaService.$queryRaw`
+        INSERT INTO attendance_logs (user_id, log_date, time_in, physical_proof_in) 
+        VALUES (${data.user_id}, ${data.log_date}, ${data.time_in}, ${data.physical_proof})
+      `;
+
+      return {
+        statusCode: 201,
+        message: 'Clock-in successful.',
+        data: entry,
+      };
+    } catch (error) {
+      console.log('Error while processing clock-in: ', error);
+      return {
+        statusCode: 500,
+        message:
+          "Internal server error. Can't perform this action. Contact system support for assistance.",
+      };
+    }
+  }
+
+  async employeeClockOut(data: clockOutDto) {
+    try {
+      // Check if the user has clocked in for the given date
+      const existingEntry: [] = await this.prismaService.$queryRaw`
+        SELECT * FROM attendance_logs 
+        WHERE user_id = ${data.user_id} 
+        AND log_date = ${data.log_date} 
+        AND time_in IS NOT NULL
+        AND time_out IS NULL
+      `;
+
+      if (existingEntry.length === 0) {
+        // If no clock-in entry exists or the user has already clocked out, return a message
+        return {
+          statusCode: 400,
+          message:
+            'You have not clocked in or you have already clocked out for today.',
+        };
+      }
+
+      // If a valid clock-in exists, proceed with clocking out by updating the record
+      const entry = await this.prismaService.$queryRaw`
+        UPDATE attendance_logs 
+        SET time_out = ${data.time_out}, physical_proof_out = ${data.physical_proof}
+        WHERE user_id = ${data.user_id} 
+        AND log_date = ${data.log_date} 
+        AND time_in IS NOT NULL
+        AND time_out IS NULL
+        RETURNING *
+      `;
+
+      return {
+        statusCode: 200,
+        message: 'Clock-out successful.',
+        data: entry,
+      };
+    } catch (error) {
+      console.log('Error while processing clock-out: ', error);
+      return {
+        statusCode: 500,
+        message:
+          "Internal server error. Can't perform this action. Contact system support for assistance.",
+      };
+    }
+  }
+
+  async getAttendanceLogs() {
+    try {
+      const logs: [] = await this.prismaService
+        .$queryRaw`SELECT attendance_logs.*, user.first_name, user.last_name FROM attendance_logs JOIN user ON attendance_logs.user_id = user.user_id`;
+
+      if (logs.length > 0) {
+        return {
+          statusCode: 200,
+          message: 'Attendance data has been successfully fetched',
+          data: logs,
+        };
+      }
+      return {
+        statusCode: 404,
+        message: 'No logs found',
+        data: logs,
+      };
+    } catch (error) {
+      console.log('Error while fetching attendance logs: ', error);
       return {
         statusCode: 500,
         message:
