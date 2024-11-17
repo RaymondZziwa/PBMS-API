@@ -5,9 +5,11 @@ import { UsersController } from './users/users.controller';
 import { NatsClientModule } from './nats_client/nats.module';
 import { EquatorialShopModule } from './equatorial/shop/shop.module';
 import { SuperadminModule } from './admin/admin.module';
+import { UploadModule } from './users/upload.module';
 
 @Module({
   imports: [
+    UploadModule,
     UsersModule,
     NatsClientModule,
     EquatorialShopModule,

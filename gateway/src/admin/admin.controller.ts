@@ -132,4 +132,30 @@ export class AdminController {
   downloadDocument(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'DOWNLOAD_DOC' }, req.body);
   }
+
+  @Post('/get-salary-and-attendance-details')
+  getSalaryAndAttendance(@Req() req: Request) {
+    return this.natsClient.send(
+      { cmd: 'GET_EMPLOYEE_SALARY_AND_ATTENDANCE_DETAILS' },
+      req.body,
+    );
+  }
+
+  @Post('/filter-salary-payment-details')
+  filterSalaryPaymentDetails(@Req() req: Request) {
+    return this.natsClient.send(
+      { cmd: 'FILTER_SALARY_PAYMENT_DETAILS' },
+      req.body,
+    );
+  }
+
+  @Post('/save-payroll')
+  savePayroll(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'SAVE_PERIOD_PAYROLL' }, req.body);
+  }
+
+  @Post('/edit-payroll-record')
+  editPayrollRecord(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'EDIT_PAYROLL_RECORD' }, req.body);
+  }
 }

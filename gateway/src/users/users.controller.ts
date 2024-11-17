@@ -152,7 +152,6 @@ export class UsersController {
     let imagePath: string;
 
     if (file) {
-      // Save the file locally and get the path
       imagePath = await this.uploadService.saveFile(file);
     } else {
       return {
@@ -162,11 +161,10 @@ export class UsersController {
       };
     }
 
-    // Prepare the data to send to the EMPLOYEE_CLOCK_IN event
     const clockInData = {
       ...req.body,
-      user_id: req.body.user_id, // Assuming you have a user_id in req.body
-      physical_proof_in: imagePath,
+      user_id: req.body.user_id,
+      physical_proof: imagePath,
     };
     return this.natsClient.send({ cmd: 'EMPLOYEE_CLOCK_IN' }, clockInData);
   }
@@ -180,7 +178,6 @@ export class UsersController {
     let imagePath: string;
 
     if (file) {
-      // Save the file locally and get the path
       imagePath = await this.uploadService.saveFile(file);
     } else {
       return {
@@ -190,11 +187,10 @@ export class UsersController {
       };
     }
 
-    // Prepare the data to send to the EMPLOYEE_CLOCK_IN event
     const clockOutData = {
       ...req.body,
-      user_id: req.body.user_id, // Assuming you have a user_id in req.body
-      physical_proof_out: imagePath,
+      user_id: req.body.user_id,
+      physical_proof: imagePath,
     };
     return this.natsClient.send({ cmd: 'EMPLOYEE_CLOCK_OUT' }, clockOutData);
   }

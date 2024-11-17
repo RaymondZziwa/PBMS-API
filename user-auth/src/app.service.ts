@@ -18,6 +18,7 @@ import { JwtTokenService } from './jwt/jwt.service';
 import { MailService } from './emails/config/mail.service';
 import { accessKeyValidatorHelperService } from './helpers/accessKeyValidator.service';
 import { generateEAN13 } from './helpers/code_generator';
+import { IAEntry } from './interfaces/interfaces';
 @Injectable()
 export class AuthMicroserviceService {
   constructor(
@@ -431,12 +432,19 @@ export class AuthMicroserviceService {
         return {
           statusCode: 400,
           message: 'You have already clocked in for today.',
+          data: null,
         };
       }
 
-      const entry = await this.prismaService.$queryRaw`
+      await this.prismaService.$queryRaw`
         INSERT INTO attendance_logs (user_id, log_date, time_in, physical_proof_in) 
-        VALUES (${data.user_id}, ${data.log_date}, ${data.time_in}, ${data.physical_proof})
+        VALUES (${data.user_id}, ${data.log_date}, ${data.time_in}, ${data.physical_proof});
+      `;
+
+      const entry = await this.prismaService.$queryRaw`
+        SELECT * FROM attendance_logs 
+        WHERE user_id = ${data.user_id} AND log_date = ${data.log_date} 
+        ORDER BY log_id DESC LIMIT 1;
       `;
 
       return {
@@ -456,8 +464,8 @@ export class AuthMicroserviceService {
 
   async employeeClockOut(data: clockOutDto) {
     try {
-      // Check if the user has clocked in for the given date
-      const existingEntry: [] = await this.prismaService.$queryRaw`
+      let hrs_wrked, hrs_msd;
+      const existingEntry: IAEntry[] = await this.prismaService.$queryRaw`
         SELECT * FROM attendance_logs 
         WHERE user_id = ${data.user_id} 
         AND log_date = ${data.log_date} 
@@ -466,23 +474,42 @@ export class AuthMicroserviceService {
       `;
 
       if (existingEntry.length === 0) {
-        // If no clock-in entry exists or the user has already clocked out, return a message
         return {
           statusCode: 400,
-          message:
-            'You have not clocked in or you have already clocked out for today.',
+          message: 'You have not clocked in today.',
+          data: null,
         };
       }
 
-      // If a valid clock-in exists, proceed with clocking out by updating the record
+      if (existingEntry[0].time_out) {
+        return {
+          statusCode: 400,
+          message: 'You have already clocked out',
+          data: null,
+        };
+      }
+
+      if (existingEntry.length > 0 && existingEntry[0]) {
+        const timeIn = new Date(existingEntry[0].time_in);
+        const timeOut = new Date(`1970-01-01T${data.time_out}.000Z`);
+        const timeDifference = timeOut.getTime() - timeIn.getTime();
+        hrs_wrked = (timeDifference / (1000 * 60 * 60)).toFixed(1);
+        hrs_msd = parseFloat('10') - parseFloat(hrs_wrked);
+      }
+
+      await this.prismaService.$queryRaw`
+          UPDATE attendance_logs 
+          SET time_out = ${data.time_out}, physical_proof_out = ${data.physical_proof}, hours_worked = ${hrs_wrked}, hours_missed = ${hrs_msd}
+          WHERE user_id = ${data.user_id} 
+          AND log_date = ${data.log_date} 
+          AND time_in IS NOT NULL
+          AND time_out IS NULL
+      `;
+
       const entry = await this.prismaService.$queryRaw`
-        UPDATE attendance_logs 
-        SET time_out = ${data.time_out}, physical_proof_out = ${data.physical_proof}
-        WHERE user_id = ${data.user_id} 
-        AND log_date = ${data.log_date} 
-        AND time_in IS NOT NULL
-        AND time_out IS NULL
-        RETURNING *
+        SELECT * FROM attendance_logs 
+        WHERE user_id = ${data.user_id} AND log_date = ${data.log_date} 
+        ORDER BY log_id DESC LIMIT 1;
       `;
 
       return {
