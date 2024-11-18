@@ -530,7 +530,7 @@ export class AuthMicroserviceService {
   async getAttendanceLogs() {
     try {
       const logs: [] = await this.prismaService
-        .$queryRaw`SELECT attendance_logs.*, user.first_name, user.last_name FROM attendance_logs JOIN user ON attendance_logs.user_id = user.user_id`;
+        .$queryRaw`SELECT attendance_logs.*, user.first_name, user.last_name FROM attendance_logs JOIN user ON attendance_logs.user_id = user.user_id ORDER BY attendance_logs.log_date DESC, attendance_logs.created_at DESC`;
 
       if (logs.length > 0) {
         return {
