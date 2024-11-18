@@ -2,6 +2,8 @@ import { Controller } from '@nestjs/common';
 import { AuthMicroserviceService } from './app.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
+  clockInDto,
+  clockOutDto,
   createUserDto,
   deleteUserDto,
   editUserDto,
@@ -32,7 +34,7 @@ export class AuthMicroserviceController {
     return this.authService.createUser(data);
   }
 
-  @MessagePattern({ cmd: 'GET_USER' })
+  //@MessagePattern({ cmd: 'GET_USER' })
   // async getUser(@Payload() data: getUserDto) {
   //   const cachedUser: any = await this.redisService.getData(
   //     data.user_id.toString(),
@@ -81,6 +83,26 @@ export class AuthMicroserviceController {
   @MessagePattern({ cmd: 'EDIT_USER_INFO' })
   editUser(@Payload() data: editUserDto) {
     return this.authService.editUser(data);
+  }
+
+  @MessagePattern({ cmd: 'GENERIC_ALL_USERS' })
+  genericUsers() {
+    return this.authService.getAllUsers();
+  }
+
+  @MessagePattern({ cmd: 'EMPLOYEE_CLOCK_IN' })
+  employeeClockIn(@Payload() data: clockInDto) {
+    return this.authService.employeeClockIn(data);
+  }
+
+  @MessagePattern({ cmd: 'EMPLOYEE_CLOCK_OUT' })
+  employeeClockOut(@Payload() data: clockOutDto) {
+    return this.authService.employeeClockOut(data);
+  }
+
+  @MessagePattern({ cmd: 'EMPLOYEE_ATTENDANCE_LOGS' })
+  employeeAttendanceLogs() {
+    return this.authService.getAttendanceLogs();
   }
 
   @MessagePattern({ cmd: 'GET_ALL_USERS' })

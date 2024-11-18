@@ -416,12 +416,12 @@ export class equatorialShopController {
     return this.natsClient.send({ cmd: 'DELETE_SAFFRON_SALE' }, req.body);
   }
 
-  @Post('/get-saffron-sales')
+  @Get('/get-saffron-sales')
   getSaffronSales(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_SAFFRON_SALES' }, req.body);
   }
 
-  @Post('/get-saffron-standings')
+  @Get('/get-saffron-standings')
   getSaffronStandings(@Req() req: Request) {
     return this.natsClient.send({ cmd: 'GET_SAFFRON_STANDINGS' }, req.body);
   }

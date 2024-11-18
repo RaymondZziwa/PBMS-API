@@ -273,3 +273,19 @@ export class editUserDto {
 
   createdAt: Date;
 }
+
+export class clockInDto {
+  user_id: number;
+  log_date: string;
+  time_in: string;
+  date: string;
+  physical_proof: string;
+}
+
+export class clockOutDto {
+  user_id: number;
+  log_date: string;
+  time_out: string;
+  date: string;
+  physical_proof: string;
+}

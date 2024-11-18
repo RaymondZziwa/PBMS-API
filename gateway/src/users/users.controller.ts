@@ -5,14 +5,20 @@ import {
   Post,
   Req,
   UnauthorizedException,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Request } from 'express';
+import { UploadService } from './upload.service';
 
 @Controller('api/v1/')
 export class UsersController {
   constructor(
     @Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
+    private readonly uploadService: UploadService,
   ) {}
 
   //admin to create user
@@ -130,5 +136,67 @@ export class UsersController {
       // Handle the case where the token is not valid
       throw new UnauthorizedException('Invalid token');
     }
+  }
+
+  @Get('/generic-all-users')
+  async getAllUsersGeneric(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'GENERIC_ALL_USERS' }, req.body);
+  }
+
+  @Post('/employee-clock-in')
+  @UseInterceptors(FileInterceptor('physical_proof_in'))
+  async employeeClockIn(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    let imagePath: string;
+
+    if (file) {
+      imagePath = await this.uploadService.saveFile(file);
+    } else {
+      return {
+        statusCode: 400,
+        message: 'Physical proof is missing',
+        data: null,
+      };
+    }
+
+    const clockInData = {
+      ...req.body,
+      user_id: req.body.user_id,
+      physical_proof: imagePath,
+    };
+    return this.natsClient.send({ cmd: 'EMPLOYEE_CLOCK_IN' }, clockInData);
+  }
+
+  @Post('/employee-clock-out')
+  @UseInterceptors(FileInterceptor('physical_proof_out'))
+  async employeeClockOut(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    let imagePath: string;
+
+    if (file) {
+      imagePath = await this.uploadService.saveFile(file);
+    } else {
+      return {
+        statusCode: 400,
+        message: 'Physical proof is missing',
+        data: null,
+      };
+    }
+
+    const clockOutData = {
+      ...req.body,
+      user_id: req.body.user_id,
+      physical_proof: imagePath,
+    };
+    return this.natsClient.send({ cmd: 'EMPLOYEE_CLOCK_OUT' }, clockOutData);
+  }
+
+  @Get('/get-attendance-logs')
+  async getEmployeeAttendanceLogs(@Req() req: Request) {
+    return this.natsClient.send({ cmd: 'EMPLOYEE_ATTENDANCE_LOGS' }, req.body);
   }
 }

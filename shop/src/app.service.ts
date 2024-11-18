@@ -1759,7 +1759,7 @@ export class AppService {
 
       return {
         statusCode: 200,
-        message: 'All saffron sales retrieved successfully',
+        message: 'Saffron sales saved successfully',
         data: getAllSaffronSales,
       };
     } catch (error) {
@@ -1867,7 +1867,7 @@ export class AppService {
               .$executeRaw`INSERT INTO ${Prisma.raw(recordsTableName)} (items, quantity, units, source, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.source}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
           } else {
             await this.prismaService
-              .$executeRaw`UPDATE ${Prisma.raw(tableName)} SET quantity = quantity + ${parseFloat(item.quantity)} WHERE project_id = ${item.productId} AND units = ${item.units}`;
+              .$executeRaw`UPDATE ${Prisma.raw(tableName)} SET quantity = quantity + ${parseFloat(item.quantity)} WHERE product_id = ${item.productId} AND units = ${item.units}`;
             await this.prismaService
               .$executeRaw`INSERT INTO ${Prisma.raw(recordsTableName)} (items, quantity, units, source, notes, transaction_date, authorized_by) VALUES (${item.productId}, ${item.quantity}, ${item.units}, ${dto.source}, ${dto.notes}, ${new Date(dto.transaction_date)}, ${dto.authorized_by})`;
           }
@@ -1886,6 +1886,7 @@ export class AppService {
         data: updatedRecords,
       };
     } catch (error) {
+      console.log('err', error);
       return {
         statusCode: 500,
         message: 'Error while restocking general store',
@@ -1895,6 +1896,7 @@ export class AppService {
   }
 
   async releaseGeneralStoreInventory(dto: generalStoreInventoryReleaseDto) {
+    console.log('out', dto);
     try {
       const insufficientItems = [];
       const items = JSON.parse(dto.items);
